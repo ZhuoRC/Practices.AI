@@ -245,6 +245,40 @@ header h1 {
     color: var(--text-secondary);
 }
 
+.sources-list {
+    margin: 0;
+    padding: 0 0 0.25rem 0.5rem;
+    color: var(--text-secondary);
+    list-style-type: none;
+}
+
+.sources-list li {
+    margin: 0.5rem 0;
+    line-height: 1.4;
+    list-style: none;
+}
+
+.source-link {
+    color: #60a5fa;
+    background: rgba(96, 165, 250, 0.1);
+    padding: 0.25rem 0.5rem;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 0.9rem;
+    border: 1px solid rgba(96, 165, 250, 0.2);
+    display: inline-block;
+    transition: all 0.2s ease;
+}
+
+.source-link:hover {
+    color: #93c5fd;
+    background: rgba(96, 165, 250, 0.2);
+    border-color: rgba(96, 165, 250, 0.4);
+    transform: translateY(-1px);
+    text-decoration: none;
+}
+
 /* Markdown formatting styles */
 .message-content h1,
 .message-content h2,

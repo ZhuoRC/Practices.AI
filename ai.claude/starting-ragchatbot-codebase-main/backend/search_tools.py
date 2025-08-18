@@ -94,17 +94,26 @@ class CourseSearchTool(Tool):
             course_title = meta.get('course_title', 'unknown')
             lesson_num = meta.get('lesson_number')
             
+            # Get lesson link if available
+            lesson_link = None
+            if lesson_num is not None:
+                lesson_link = self.store.get_lesson_link(course_title, lesson_num)
+            
             # Build context header
             header = f"[{course_title}"
             if lesson_num is not None:
                 header += f" - Lesson {lesson_num}"
             header += "]"
             
-            # Track source for the UI
-            source = course_title
+            # Track source for the UI with embedded link
+            source_info = {
+                'display': course_title,
+                'lesson_number': lesson_num,
+                'link': lesson_link
+            }
             if lesson_num is not None:
-                source += f" - Lesson {lesson_num}"
-            sources.append(source)
+                source_info['display'] += f" - Lesson {lesson_num}"
+            sources.append(source_info)
             
             formatted.append(f"{header}\n{doc}")
         

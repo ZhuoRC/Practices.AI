@@ -122,10 +122,40 @@ function addMessage(content, type, sources = null, isWelcome = false) {
     let html = `<div class="message-content">${displayContent}</div>`;
     
     if (sources && sources.length > 0) {
+        // Deduplicate sources based on display text and link
+        const uniqueSources = [];
+        const seen = new Set();
+        
+        sources.forEach(source => {
+            let key;
+            if (typeof source === 'object' && source.display) {
+                // Use display text + link as unique key for objects
+                key = `${source.display}|${source.link || ''}`;
+            } else {
+                // Use string value as key for string sources
+                key = String(source);
+            }
+            
+            if (!seen.has(key)) {
+                seen.add(key);
+                uniqueSources.push(source);
+            }
+        });
+        
+        // Process unique sources to create clickable links
+        const processedSources = uniqueSources.map(source => {
+            if (typeof source === 'object' && source.display && source.link) {
+                return `<li><a href="${source.link}" target="_blank" class="source-link">${source.display}</a></li>`;
+            } else if (typeof source === 'string') {
+                return `<li>${source}</li>`; // Fallback for string sources
+            }
+            return `<li>${source.display || source}</li>`; // Fallback for object sources without links
+        });
+        
         html += `
             <details class="sources-collapsible">
                 <summary class="sources-header">Sources</summary>
-                <div class="sources-content">${sources.join(', ')}</div>
+                <ul class="sources-list">${processedSources.join('')}</ul>
             </details>
         `;
     }
