@@ -5,7 +5,7 @@ const API_URL = '/api';
 let currentSessionId = null;
 
 // DOM elements
-let chatMessages, chatInput, sendButton, totalCourses, courseTitles;
+let chatMessages, chatInput, sendButton, totalCourses, courseTitles, newChatButton;
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
@@ -15,6 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
     sendButton = document.getElementById('sendButton');
     totalCourses = document.getElementById('totalCourses');
     courseTitles = document.getElementById('courseTitles');
+    newChatButton = document.getElementById('newChatButton');
     
     setupEventListeners();
     createNewSession();
@@ -29,6 +30,8 @@ function setupEventListeners() {
         if (e.key === 'Enter') sendMessage();
     });
     
+    // New chat button
+    newChatButton.addEventListener('click', clearCurrentSession);
     
     // Suggested questions
     document.querySelectorAll('.suggested-item').forEach(button => {
@@ -180,6 +183,32 @@ async function createNewSession() {
     currentSessionId = null;
     chatMessages.innerHTML = '';
     addMessage('Welcome to the Course Materials Assistant! I can help you with questions about courses, lessons and specific content. What would you like to know?', 'assistant', null, true);
+}
+
+async function clearCurrentSession() {
+    try {
+        // Clear session on backend if we have an active session
+        if (currentSessionId) {
+            await fetch(`${API_URL}/sessions/${currentSessionId}/clear`, {
+                method: 'DELETE'
+            });
+        }
+        
+        // Reset session and UI
+        currentSessionId = null;
+        chatMessages.innerHTML = '';
+        addMessage('Welcome to the Course Materials Assistant! I can help you with questions about courses, lessons and specific content. What would you like to know?', 'assistant', null, true);
+        
+        // Clear any input
+        chatInput.value = '';
+        chatInput.focus();
+    } catch (error) {
+        console.error('Error clearing session:', error);
+        // Still reset the UI even if backend call fails
+        currentSessionId = null;
+        chatMessages.innerHTML = '';
+        addMessage('Welcome to the Course Materials Assistant! I can help you with questions about courses, lessons and specific content. What would you like to know?', 'assistant', null, true);
+    }
 }
 
 // Load course statistics

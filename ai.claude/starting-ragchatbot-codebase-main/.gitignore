@@ -17,6 +17,9 @@ ENV/
 # ChromaDB
 backend/chroma_db/
 
+# Playwright MCP
+.playwright-mcp/
+
 # Uploads
 uploads/
 
