@@ -39,3 +39,48 @@ I need you to:
 3. Write tests to evaluate how the RAG system is handling the content-query related questions.
 
 Save the tests in a tests folder within @backend. Run those tests against the current system to identify which components are failing. Propose fixes based on what the tests reveal is broken.
+
+
+---
+The @EDA.ipynd contains exploratory data analysis on e-commerce data in @ecommerce_data, focusing on sales metrics for 2023. Keep the same analysis and graphs, and improve the structure and documentation of the notebook.
+
+Review the existing notebook and identify:
+- what bussiness metrics are currently calculated
+- what visualizations are created
+- what data transformations are performed
+- any code quality issues or inefficiencies
+
+**refactoring requirments**
+1. notebook structure & documentation
+    - add proper documentation and markdown cells with clear header and a brief explanation for the section
+    - organize into logical sections:
+        - introduction & business objectives
+        - data loading & configuration
+        - data preparation & transformation
+        - business metrics calculation (revenue, product, geographic, customer experience analysis)
+        - summary of observations
+    - add table of contents at the beginning
+    - include data dictionary explaining key columns and business terms
+2. code quality improvements
+    - create reusable functions with docstrings
+    - implement consistent naming and formatting
+    - create separate Python files:
+        - business_metrics.py, containing business metric calculations only
+        - data_loader.py loading, processing and cleaning the data
+3. enhanced visualizations
+    - improve all plots with:
+        - clear and descriptive titles
+        - proper axis labels with units
+        - legends where needed
+        - appropriate chart types for the data
+        - include date range in plot titles or captions
+        - use consistent color business-oriented color schemes
+4. configurable analysis framework
+    the notebook shows the computation of metrics for a specific date range(entire year of 2023 compared to 2022).
+    refactor the code so that the data is first filtered according to configurable month and year & implement general-purpose metric calculations.
+
+**deliverables expected**
+- refactored Jupyter notebook(EDA_refactored.ipynb) with all improvement
+- business metrics module(business_metrics.py) with documented functions
+- requirements file(requirements.txt) listing all dependencies
+- README section explaining how to use the refactored analysis
