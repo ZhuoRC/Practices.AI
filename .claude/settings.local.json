@@ -19,7 +19,10 @@
       "Bash(git branch:*)",
       "Bash(git gc:*)",
       "Bash(lsof:*)",
-      "Bash(kill:*)"
+      "Bash(kill:*)",
+      "Bash(set FILTER_BRANCH_SQUELCH_WARNING=1)",
+      "Bash(git filter-branch:*)",
+      "Bash(git commit:*)"
     ],
     "deny": [],
     "ask": []
