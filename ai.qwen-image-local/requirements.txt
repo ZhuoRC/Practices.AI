@@ -1,0 +1,10 @@
+torch
+torchvision
+torchaudio
+diffusers
+fastapi
+uvicorn
+pillow
+transformers
+accelerate
+safetensors

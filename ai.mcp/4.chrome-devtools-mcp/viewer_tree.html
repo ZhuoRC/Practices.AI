@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>加拿大移民处理时间查询器 - 树形展示</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Courier New', monospace, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .header h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        .header .flag {
+            font-size: 3em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .controls {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        .control-group label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: #333;
+            font-size: 1.1em;
+        }
+
+        .control-group select {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1em;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .control-group select:hover {
+            border-color: #667eea;
+        }
+
+        .control-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #f5f5f5;
+            color: #333;
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: #e0e0e0;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .results {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            display: none;
+        }
+
+        .results.show {
+            display: block;
+        }
+
+        .results h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+
+        /* 树形结构样式 */
+        .tree-container {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 30px;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.8;
+            overflow-x: auto;
+        }
+
+        .tree-line {
+            white-space: pre;
+            margin: 0;
+            padding: 2px 0;
+            transition: background 0.2s;
+        }
+
+        .tree-line:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .tree-category {
+            color: #4ec9b0;
+            font-weight: 700;
+            font-size: 15px;
+            margin-top: 15px;
+        }
+
+        .tree-category:first-child {
+            margin-top: 0;
+        }
+
+        .tree-branch {
+            color: #808080;
+        }
+
+        .tree-item {
+            color: #9cdcfe;
+        }
+
+        .tree-time {
+            color: #ce9178;
+            font-weight: 600;
+        }
+
+        .tree-time.pending {
+            color: #858585;
+            font-style: italic;
+        }
+
+        .tree-time.success {
+            color: #4ec9b0;
+        }
+
+        .tree-time.error {
+            color: #f48771;
+        }
+
+        .tree-dots {
+            color: #404040;
+        }
+
+        .summary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .summary-item {
+            text-align: center;
+        }
+
+        .summary-value {
+            font-size: 2.5em;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .summary-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+
+        .export-section {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 2px solid #e0e0e0;
+            display: flex;
+            gap: 15px;
+        }
+
+        .view-toggle {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .view-toggle-btn {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+
+        .view-toggle-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: #667eea;
+        }
+
+        .tree-header {
+            color: #569cd6;
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #404040;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.8em;
+            }
+
+            .tree-container {
+                font-size: 12px;
+                padding: 20px 15px;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+
+            .btn {
+                min-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="flag">🇨🇦</div>
+            <h1>加拿大移民处理时间查询器</h1>
+            <p>树形结构展示 - 选择国家，查看所有申请类型的处理时间</p>
+        </div>
+
+        <!-- Controls -->
+        <div class="controls">
+            <div class="control-group">
+                <label for="countrySelect">🌍 选择申请国家/地区</label>
+                <select id="countrySelect">
+                    <option value="">-- 请选择国家 --</option>
+                    <optgroup label="常用国家">
+                        <option value="China (People's Republic of)">China (People's Republic of)</option>
+                        <option value="India">India</option>
+                        <option value="Philippines">Philippines</option>
+                        <option value="United States of America">United States of America</option>
+                        <option value="United Kingdom">United Kingdom</option>
+                        <option value="France">France</option>
+                        <option value="Germany">Germany</option>
+                        <option value="Australia">Australia</option>
+                        <option value="Japan">Japan</option>
+                        <option value="South Korea">South Korea</option>
+                    </optgroup>
+                </select>
+            </div>
+
+            <div class="button-group">
+                <button class="btn btn-primary" id="loadDemoBtn">
+                    🎨 加载演示数据（中国样本）
+                </button>
+            </div>
+
+            <div style="background: #fff3cd; padding: 15px; border-radius: 8px; margin-top: 15px; border-left: 4px solid #ffc107;">
+                <strong>💡 如何获取实际数据：</strong>
+                <ol style="margin: 10px 0 0 20px; line-height: 1.8;">
+                    <li>📖 查看详细教程: <a href="HOW_TO_GET_REAL_DATA.md" target="_blank" style="color: #667eea; font-weight: 600;">HOW_TO_GET_REAL_DATA.md</a></li>
+                    <li>🌐 在目标网站控制台运行查询脚本</li>
+                    <li>📤 点击下方"导入JSON数据"按钮粘贴结果</li>
+                </ol>
+            </div>
+        </div>
+
+        <!-- Results -->
+        <div class="results" id="resultsBox">
+            <div class="summary" id="summaryBox">
+                <div class="summary-item">
+                    <div class="summary-value" id="totalCount">0</div>
+                    <div class="summary-label">总申请类型</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-value" id="completedCount">0</div>
+                    <div class="summary-label">已查询</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-value" id="successCount">0</div>
+                    <div class="summary-label">查询成功</div>
+                </div>
+            </div>
+
+            <h2>📊 处理时间树形展示</h2>
+
+            <!-- Tree Container -->
+            <div class="tree-container" id="treeContainer">
+                <div class="tree-header">🇨🇦 Canada Immigration Processing Times</div>
+                <div id="treeContent"></div>
+            </div>
+
+            <div class="export-section">
+                <button class="btn btn-secondary" id="importJsonBtn">
+                    📤 导入JSON数据
+                </button>
+                <button class="btn btn-secondary" id="exportTreeBtn">
+                    📄 导出为文本文件
+                </button>
+                <button class="btn btn-secondary" id="exportJsonBtn">
+                    📥 导出为JSON
+                </button>
+                <button class="btn btn-secondary" id="copyTreeBtn">
+                    📋 复制树形结构
+                </button>
+            </div>
+        </div>
+
+        <!-- Import Modal -->
+        <div id="importModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 1000; padding: 20px;">
+            <div style="max-width: 800px; margin: 50px auto; background: white; border-radius: 15px; padding: 30px; max-height: 80vh; overflow-y: auto;">
+                <h2 style="margin-bottom: 20px;">📤 导入处理时间数据</h2>
+                <p style="color: #666; margin-bottom: 20px;">
+                    粘贴从 <code>queryAllProcessingTimes()</code> 或其他来源获取的JSON数据：
+                </p>
+                <textarea id="importTextarea"
+                    style="width: 100%; height: 300px; padding: 15px; border: 2px solid #e0e0e0; border-radius: 8px; font-family: 'Courier New', monospace; font-size: 13px;"
+                    placeholder='粘贴JSON数据，例如：
+{
+  "Temporary residence": {
+    "Visitor visa (from outside Canada)": "11 个月",
+    "Study permit (from outside Canada)": "8 周"
+  },
+  "Economic immigration": {
+    "Express Entry": "6 个月"
+  }
+}'></textarea>
+                <div style="margin-top: 20px; display: flex; gap: 10px;">
+                    <button class="btn btn-primary" id="importConfirmBtn" style="flex: 1;">
+                        ✅ 导入并显示
+                    </button>
+                    <button class="btn btn-secondary" id="importCancelBtn" style="flex: 1;">
+                        ❌ 取消
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Application types
+        const APPLICATION_TYPES = {
+            "Temporary residence (visiting, studying, working)": [
+                "Visitor visa (from outside Canada)",
+                "Visitor visa (from inside Canada)",
+                "Visitor extension (Visitor record)",
+                "Super visa (parents or grandparents)",
+                "Study permit (from outside Canada)",
+                "Study permit (from inside Canada)",
+                "Study permit extension",
+                "Work permit (from outside Canada)",
+                "Work permit from inside Canada (initial and extension)",
+                "Seasonal Agricultural Worker Program (SAWP)",
+                "International Experience Canada (IEC)",
+                "Electronic Travel Authorization (eTA)"
+            ],
+            "Economic immigration": [
+                "Express Entry",
+                "Provincial Nominee Program",
+                "Quebec-selected skilled workers",
+                "Atlantic Immigration Program",
+                "Rural and Northern Immigration Pilot",
+                "Agri-Food Pilot",
+                "Home Child Care Provider Pilot",
+                "Home Support Worker Pilot"
+            ],
+            "Family sponsorship": [
+                "Spouse, partner or child",
+                "Parents and grandparents",
+                "Other relatives"
+            ],
+            "Citizenship": [
+                "Citizenship grant",
+                "Citizenship certificate",
+                "Citizenship resumption"
+            ],
+            "Permanent resident cards": [
+                "New card",
+                "Renewal card",
+                "Replacement card"
+            ]
+        };
+
+        // Demo data for China
+        const DEMO_DATA = {
+            "Temporary residence (visiting, studying, working)": {
+                "Visitor visa (from outside Canada)": "11 个月",
+                "Visitor visa (from inside Canada)": "19 周",
+                "Visitor extension (Visitor record)": "184 天",
+                "Super visa (parents or grandparents)": "122 天",
+                "Study permit (from outside Canada)": "8 周",
+                "Study permit (from inside Canada)": "89 天",
+                "Study permit extension": "56 天",
+                "Work permit (from outside Canada)": "14 周",
+                "Work permit from inside Canada (initial and extension)": "97 天",
+                "Seasonal Agricultural Worker Program (SAWP)": "6 周",
+                "International Experience Canada (IEC)": "8 周",
+                "Electronic Travel Authorization (eTA)": "即时"
+            },
+            "Economic immigration": {
+                "Express Entry": "6 个月",
+                "Provincial Nominee Program": "18 个月",
+                "Quebec-selected skilled workers": "24 个月",
+                "Atlantic Immigration Program": "8 个月",
+                "Rural and Northern Immigration Pilot": "10 个月",
+                "Agri-Food Pilot": "12 个月",
+                "Home Child Care Provider Pilot": "15 个月",
+                "Home Support Worker Pilot": "15 个月"
+            },
+            "Family sponsorship": {
+                "Spouse, partner or child": "12 个月",
+                "Parents and grandparents": "24 个月",
+                "Other relatives": "60 个月"
+            },
+            "Citizenship": {
+                "Citizenship grant": "13 个月",
+                "Citizenship certificate": "6 个月",
+                "Citizenship resumption": "5 个月"
+            },
+            "Permanent resident cards": {
+                "New card": "104 天",
+                "Renewal card": "74 天",
+                "Replacement card": "74 天"
+            }
+        };
+
+        let allResults = {};
+        let selectedCountry = "";
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            setupEventListeners();
+        });
+
+        function setupEventListeners() {
+            document.getElementById('countrySelect').addEventListener('change', function(e) {
+                selectedCountry = e.target.value;
+            });
+
+            document.getElementById('loadDemoBtn').addEventListener('click', loadDemoData);
+            document.getElementById('importJsonBtn').addEventListener('click', showImportModal);
+            document.getElementById('importConfirmBtn').addEventListener('click', importData);
+            document.getElementById('importCancelBtn').addEventListener('click', hideImportModal);
+            document.getElementById('exportTreeBtn').addEventListener('click', exportAsText);
+            document.getElementById('exportJsonBtn').addEventListener('click', exportAsJson);
+            document.getElementById('copyTreeBtn').addEventListener('click', copyTree);
+        }
+
+        function showImportModal() {
+            document.getElementById('importModal').style.display = 'block';
+            document.getElementById('importTextarea').value = '';
+            document.getElementById('importTextarea').focus();
+        }
+
+        function hideImportModal() {
+            document.getElementById('importModal').style.display = 'none';
+        }
+
+        function importData() {
+            const textarea = document.getElementById('importTextarea');
+            const jsonText = textarea.value.trim();
+
+            if (!jsonText) {
+                alert('请粘贴JSON数据');
+                return;
+            }
+
+            try {
+                // Try to parse as JSON
+                const data = JSON.parse(jsonText);
+
+                // Check if it's the full format with country/queryDate or just results
+                if (data.results) {
+                    allResults = data.results;
+                    selectedCountry = data.country || selectedCountry;
+                } else {
+                    // Assume it's just the results object
+                    allResults = data;
+                }
+
+                // Update country selector if we got country info
+                if (selectedCountry) {
+                    document.getElementById('countrySelect').value = selectedCountry;
+                }
+
+                renderTree();
+                updateSummary();
+                document.getElementById('resultsBox').classList.add('show');
+                hideImportModal();
+
+                // Show success message
+                const btn = document.getElementById('importJsonBtn');
+                const originalText = btn.textContent;
+                btn.textContent = '✅ 导入成功！';
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                }, 2000);
+
+            } catch (error) {
+                alert('JSON格式错误，请检查数据格式：\n\n' + error.message);
+                console.error('Import error:', error);
+            }
+        }
+
+        function loadDemoData() {
+            selectedCountry = document.getElementById('countrySelect').value || "China (People's Republic of)";
+            document.getElementById('countrySelect').value = "China (People's Republic of)";
+
+            allResults = DEMO_DATA;
+            renderTree();
+            updateSummary();
+            document.getElementById('resultsBox').classList.add('show');
+        }
+
+        function renderTree() {
+            const container = document.getElementById('treeContent');
+            container.innerHTML = '';
+
+            const categories = Object.keys(APPLICATION_TYPES);
+
+            categories.forEach((category, catIndex) => {
+                const isLastCategory = catIndex === categories.length - 1;
+
+                // Category line
+                const categoryLine = createTreeLine(category, 'tree-category');
+                container.appendChild(categoryLine);
+
+                // Items
+                const types = APPLICATION_TYPES[category];
+                types.forEach((type, typeIndex) => {
+                    const isLastItem = typeIndex === types.length - 1;
+                    const branch = isLastItem ? '└──' : '├──';
+                    const time = allResults[category]?.[type] || '时间待查询';
+                    const timeClass = allResults[category]?.[type] ? 'success' : 'pending';
+
+                    const dots = '·'.repeat(Math.max(2, 50 - type.length));
+                    const line = `  <span class="tree-branch">${branch}</span> <span class="tree-item">${type}</span> <span class="tree-dots">${dots}</span> <span class="tree-time ${timeClass}">${time}</span>`;
+
+                    const itemLine = createTreeLine(line);
+                    container.appendChild(itemLine);
+                });
+
+                // Add spacing between categories
+                if (!isLastCategory) {
+                    container.appendChild(createTreeLine('│', 'tree-branch'));
+                }
+            });
+        }
+
+        function createTreeLine(content, className = '') {
+            const div = document.createElement('div');
+            div.className = `tree-line ${className}`;
+            div.innerHTML = content;
+            return div;
+        }
+
+        function updateSummary() {
+            let total = 0;
+            let completed = 0;
+            let success = 0;
+
+            Object.values(APPLICATION_TYPES).forEach(types => {
+                total += types.length;
+            });
+
+            Object.values(allResults).forEach(category => {
+                Object.values(category).forEach(time => {
+                    completed++;
+                    if (time && time !== '时间待查询') {
+                        success++;
+                    }
+                });
+            });
+
+            document.getElementById('totalCount').textContent = total;
+            document.getElementById('completedCount').textContent = completed;
+            document.getElementById('successCount').textContent = success;
+        }
+
+        function getTreeText() {
+            let text = `加拿大移民申请处理时间 - ${selectedCountry}\n`;
+            text += '='.repeat(60) + '\n\n';
+
+            Object.keys(APPLICATION_TYPES).forEach(category => {
+                text += `${category}\n`;
+
+                const types = APPLICATION_TYPES[category];
+                types.forEach((type, index) => {
+                    const isLast = index === types.length - 1;
+                    const branch = isLast ? '└──' : '├──';
+                    const time = allResults[category]?.[type] || '时间待查询';
+                    const dots = '·'.repeat(Math.max(2, 50 - type.length));
+
+                    text += `  ${branch} ${type} ${dots} ${time}\n`;
+                });
+
+                text += '\n';
+            });
+
+            text += '\n' + '='.repeat(60) + '\n';
+            text += `查询日期: ${new Date().toLocaleDateString('zh-CN')}\n`;
+            text += `数据来源: https://www.canada.ca/immigration\n`;
+
+            return text;
+        }
+
+        function exportAsText() {
+            const text = getTreeText();
+            const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `canada-processing-times-${selectedCountry.replace(/\s+/g, '-')}.txt`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function exportAsJson() {
+            const data = {
+                country: selectedCountry,
+                queryDate: new Date().toISOString(),
+                results: allResults
+            };
+
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `canada-processing-times-${selectedCountry.replace(/\s+/g, '-')}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function copyTree() {
+            const text = getTreeText();
+            navigator.clipboard.writeText(text).then(() => {
+                const btn = document.getElementById('copyTreeBtn');
+                const originalText = btn.textContent;
+                btn.textContent = '✅ 已复制！';
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                }, 2000);
+            }).catch(err => {
+                alert('复制失败，请手动复制');
+            });
+        }
+    </script>
+</body>
+</html>

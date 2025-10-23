@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>加拿大移民处理时间查询器 - 完整版</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .header h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        .header .flag {
+            font-size: 3em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .alert {
+            background: #fff3cd;
+            border-left: 5px solid #ffc107;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .alert-title {
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: #856404;
+        }
+
+        .alert-content {
+            color: #856404;
+            line-height: 1.6;
+        }
+
+        .controls {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        .control-group label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: #333;
+            font-size: 1.1em;
+        }
+
+        .control-group select {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1em;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .control-group select:hover {
+            border-color: #667eea;
+        }
+
+        .control-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #f5f5f5;
+            color: #333;
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: #e0e0e0;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .status {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            display: none;
+        }
+
+        .status.show {
+            display: block;
+        }
+
+        .status.loading {
+            background: #fff3cd;
+            border-left: 5px solid #ffc107;
+        }
+
+        .status.success {
+            background: #d4edda;
+            border-left: 5px solid #28a745;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            border-left: 5px solid #dc3545;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 10px;
+            margin-top: 15px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .results {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            display: none;
+        }
+
+        .results.show {
+            display: block;
+        }
+
+        .results h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+
+        .category-section {
+            margin-bottom: 30px;
+        }
+
+        .category-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+
+        .category-header:hover {
+            transform: translateX(5px);
+        }
+
+        .category-header h3 {
+            font-size: 1.3em;
+        }
+
+        .toggle-icon {
+            font-size: 1.2em;
+            transition: transform 0.3s ease;
+        }
+
+        .category-section.collapsed .toggle-icon {
+            transform: rotate(-90deg);
+        }
+
+        .application-list {
+            display: grid;
+            gap: 15px;
+            max-height: 2000px;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+
+        .category-section.collapsed .application-list {
+            max-height: 0;
+        }
+
+        .application-item {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+            transition: all 0.3s ease;
+        }
+
+        .application-item:hover {
+            background: #e9ecef;
+            transform: translateX(5px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .application-name {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+            font-size: 1.1em;
+        }
+
+        .processing-time {
+            color: #667eea;
+            font-size: 1.3em;
+            font-weight: 700;
+        }
+
+        .processing-time.pending {
+            color: #999;
+            font-style: italic;
+        }
+
+        .processing-time.error {
+            color: #dc3545;
+        }
+
+        .summary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .summary-item {
+            text-align: center;
+        }
+
+        .summary-value {
+            font-size: 2.5em;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .summary-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+
+        .export-section {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 2px solid #e0e0e0;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.8em;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+
+            .btn {
+                min-width: 100%;
+            }
+
+            .summary {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .code-section {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        .code-section h3 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .code-section pre {
+            background: #f5f5f5;
+            padding: 20px;
+            border-radius: 10px;
+            overflow-x: auto;
+            border-left: 4px solid #667eea;
+        }
+
+        .code-section code {
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            color: #333;
+        }
+
+        .instructions {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        .instructions h3 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .instructions ol {
+            margin-left: 20px;
+            line-height: 2;
+            color: #666;
+        }
+
+        .instructions li {
+            margin-bottom: 10px;
+        }
+
+        .instructions code {
+            background: #f5f5f5;
+            padding: 2px 8px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="flag">🇨🇦</div>
+            <h1>加拿大移民处理时间查询器</h1>
+            <p>选择国家，一键获取所有申请类型的处理时间</p>
+        </div>
+
+        <!-- Alert -->
+        <div class="alert">
+            <div class="alert-title">⚠️ 重要说明</div>
+            <div class="alert-content">
+                此页面需要在加拿大移民局网站的页面上下文中运行，请按照下方说明进行操作。<br>
+                本工具仅用于演示目的，请遵守网站使用条款，合理控制请求频率。
+            </div>
+        </div>
+
+        <!-- Instructions -->
+        <div class="instructions">
+            <h3>📖 使用说明</h3>
+            <ol>
+                <li>打开加拿大移民局网站: <code>https://www.canada.ca/en/immigration-refugees-citizenship/services/application/check-processing-times.html</code></li>
+                <li>按 <code>F12</code> 打开浏览器开发者工具</li>
+                <li>切换到 <code>Console</code> (控制台) 标签页</li>
+                <li>将 <code>example_complete.js</code> 文件的内容复制粘贴到控制台并回车</li>
+                <li>将此 HTML 文件在本地打开，或复制其中的 JavaScript 代码到控制台</li>
+                <li>选择国家后点击"开始查询"按钮</li>
+            </ol>
+        </div>
+
+        <!-- Controls -->
+        <div class="controls">
+            <div class="control-group">
+                <label for="countrySelect">🌍 选择申请国家/地区</label>
+                <select id="countrySelect">
+                    <option value="">-- 请选择国家 --</option>
+                    <optgroup label="常用国家">
+                        <option value="China (People's Republic of)">China (People's Republic of)</option>
+                        <option value="India">India</option>
+                        <option value="Philippines">Philippines</option>
+                        <option value="United States of America">United States of America</option>
+                        <option value="United Kingdom">United Kingdom</option>
+                        <option value="France">France</option>
+                        <option value="Germany">Germany</option>
+                        <option value="Australia">Australia</option>
+                        <option value="Japan">Japan</option>
+                        <option value="South Korea">South Korea</option>
+                        <option value="Vietnam">Vietnam</option>
+                        <option value="Pakistan">Pakistan</option>
+                        <option value="Bangladesh">Bangladesh</option>
+                        <option value="Nigeria">Nigeria</option>
+                        <option value="Mexico">Mexico</option>
+                        <option value="Brazil">Brazil</option>
+                    </optgroup>
+                </select>
+            </div>
+
+            <div class="button-group">
+                <button class="btn btn-primary" id="fetchBtn" disabled>
+                    🚀 开始查询所有处理时间
+                </button>
+                <button class="btn btn-secondary" id="exportBtn" disabled>
+                    📥 导出为JSON
+                </button>
+            </div>
+        </div>
+
+        <!-- Status -->
+        <div class="status" id="statusBox">
+            <div id="statusMessage"></div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+        </div>
+
+        <!-- Results -->
+        <div class="results" id="resultsBox">
+            <div class="summary" id="summaryBox">
+                <div class="summary-item">
+                    <div class="summary-value" id="totalCount">0</div>
+                    <div class="summary-label">总申请类型</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-value" id="completedCount">0</div>
+                    <div class="summary-label">已完成查询</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-value" id="successCount">0</div>
+                    <div class="summary-label">查询成功</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-value" id="failedCount">0</div>
+                    <div class="summary-label">查询失败</div>
+                </div>
+            </div>
+
+            <h2>📊 处理时间详情</h2>
+            <div id="categoriesContainer"></div>
+
+            <div class="export-section">
+                <button class="btn btn-secondary" id="exportBtn2">
+                    📥 导出完整数据 (JSON)
+                </button>
+            </div>
+        </div>
+
+        <!-- Integration Code -->
+        <div class="code-section">
+            <h3>🔧 集成代码 (复制到控制台)</h3>
+            <pre><code>// 此代码需要在目标网站的控制台中执行
+// 请先加载 example_complete.js，然后执行此代码
+
+// 应用类型定义
+const APPLICATION_TYPES = {
+    "Temporary residence (visiting, studying, working)": [
+        "Visitor visa (from outside Canada)",
+        "Study permit (from outside Canada)",
+        "Work permit (from outside Canada)"
+        // ... 更多类型见完整版
+    ],
+    // ... 其他类别
+};
+
+// 查询所有处理时间
+async function queryAllProcessingTimes(country) {
+    const results = {};
+
+    for (const [category, types] of Object.entries(APPLICATION_TYPES)) {
+        results[category] = {};
+
+        for (const type of types) {
+            try {
+                const result = await getCanadaProcessingTime(category, type, country);
+                results[category][type] = result;
+
+                // 等待以避免过载
+                await new Promise(r => setTimeout(r, 5000));
+
+                // 重新加载页面准备下一次查询
+                window.location.reload();
+                await new Promise(r => setTimeout(r, 3000));
+            } catch (error) {
+                results[category][type] = { error: error.message };
+            }
+        }
+    }
+
+    return results;
+}</code></pre>
+        </div>
+    </div>
+
+    <script>
+        // Application types mapping - 精简版，仅包含主要类型
+        const APPLICATION_TYPES = {
+            "Temporary residence (visiting, studying, working)": [
+                "Visitor visa (from outside Canada)",
+                "Study permit (from outside Canada)",
+                "Work permit (from outside Canada)",
+                "Electronic Travel Authorization (eTA)"
+            ],
+            "Family sponsorship": [
+                "Spouse, partner or child"
+            ],
+            "Citizenship": [
+                "Citizenship grant"
+            ]
+        };
+
+        // State
+        let allResults = {};
+        let selectedCountry = "";
+        let totalQueries = 0;
+        let completedQueries = 0;
+        let successQueries = 0;
+        let failedQueries = 0;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            setupEventListeners();
+        });
+
+        function setupEventListeners() {
+            document.getElementById('countrySelect').addEventListener('change', function(e) {
+                selectedCountry = e.target.value;
+                document.getElementById('fetchBtn').disabled = !selectedCountry;
+            });
+
+            document.getElementById('fetchBtn').addEventListener('click', startQuery);
+            document.getElementById('exportBtn').addEventListener('click', exportResults);
+            document.getElementById('exportBtn2').addEventListener('click', exportResults);
+        }
+
+        function startQuery() {
+            alert('注意：此功能需要在加拿大移民局网站的页面上下文中运行。\n\n请按照页面上方的说明操作。\n\n如果您已在目标网站上，请在控制台中使用 queryAllProcessingTimes() 函数。');
+        }
+
+        function exportResults() {
+            if (Object.keys(allResults).length === 0) {
+                alert('暂无数据可导出');
+                return;
+            }
+
+            const data = {
+                country: selectedCountry,
+                queryDate: new Date().toISOString(),
+                totalQueries: totalQueries,
+                successQueries: successQueries,
+                failedQueries: failedQueries,
+                results: allResults
+            };
+
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `canada-processing-times-${selectedCountry.replace(/\s+/g, '-')}-${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // Expose function for console usage
+        window.updateResults = function(results) {
+            allResults = results;
+            displayResults();
+        };
+
+        function displayResults() {
+            // Update summary
+            document.getElementById('totalCount').textContent = totalQueries;
+            document.getElementById('completedCount').textContent = completedQueries;
+            document.getElementById('successCount').textContent = successQueries;
+            document.getElementById('failedCount').textContent = failedQueries;
+
+            // Create category sections
+            const container = document.getElementById('categoriesContainer');
+            container.innerHTML = '';
+
+            for (const [category, types] of Object.entries(allResults)) {
+                const section = createCategorySection(category, types);
+                container.appendChild(section);
+            }
+
+            document.getElementById('resultsBox').classList.add('show');
+            document.getElementById('exportBtn').disabled = false;
+        }
+
+        function createCategorySection(category, types) {
+            const section = document.createElement('div');
+            section.className = 'category-section';
+
+            const header = document.createElement('div');
+            header.className = 'category-header';
+            header.innerHTML = `
+                <h3>${category}</h3>
+                <span class="toggle-icon">▼</span>
+            `;
+            header.onclick = () => section.classList.toggle('collapsed');
+
+            const list = document.createElement('div');
+            list.className = 'application-list';
+
+            for (const [type, result] of Object.entries(types)) {
+                const item = document.createElement('div');
+                item.className = 'application-item';
+
+                const timeText = result.processingTime || result.error || '未知';
+                const timeClass = result.error ? 'error' : '';
+
+                item.innerHTML = `
+                    <div class="application-name">${type}</div>
+                    <div class="processing-time ${timeClass}">${timeText}</div>
+                `;
+                list.appendChild(item);
+            }
+
+            section.appendChild(header);
+            section.appendChild(list);
+
+            return section;
+        }
+    </script>
+</body>
+</html>
