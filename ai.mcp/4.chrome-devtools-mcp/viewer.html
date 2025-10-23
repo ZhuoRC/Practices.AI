@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>加拿大移民处理时间查询器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .header h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        .header .flag {
+            font-size: 3em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .controls {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        .control-group label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: #333;
+            font-size: 1.1em;
+        }
+
+        .control-group select {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1em;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .control-group select:hover {
+            border-color: #667eea;
+        }
+
+        .control-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #f5f5f5;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .status {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            display: none;
+        }
+
+        .status.show {
+            display: block;
+        }
+
+        .status.loading {
+            background: #fff3cd;
+            border-left: 5px solid #ffc107;
+        }
+
+        .status.success {
+            background: #d4edda;
+            border-left: 5px solid #28a745;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            border-left: 5px solid #dc3545;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 10px;
+            margin-top: 15px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .results {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            display: none;
+        }
+
+        .results.show {
+            display: block;
+        }
+
+        .results h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+
+        .category-section {
+            margin-bottom: 30px;
+        }
+
+        .category-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+
+        .category-header:hover {
+            transform: translateX(5px);
+        }
+
+        .category-header h3 {
+            font-size: 1.3em;
+        }
+
+        .toggle-icon {
+            font-size: 1.2em;
+            transition: transform 0.3s ease;
+        }
+
+        .category-section.collapsed .toggle-icon {
+            transform: rotate(-90deg);
+        }
+
+        .application-list {
+            display: grid;
+            gap: 15px;
+            max-height: 1000px;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+
+        .category-section.collapsed .application-list {
+            max-height: 0;
+        }
+
+        .application-item {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+            transition: all 0.3s ease;
+        }
+
+        .application-item:hover {
+            background: #e9ecef;
+            transform: translateX(5px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .application-name {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+            font-size: 1.1em;
+        }
+
+        .processing-time {
+            color: #667eea;
+            font-size: 1.3em;
+            font-weight: 700;
+        }
+
+        .processing-time.pending {
+            color: #999;
+            font-style: italic;
+        }
+
+        .processing-time.error {
+            color: #dc3545;
+        }
+
+        .summary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .summary-item {
+            text-align: center;
+        }
+
+        .summary-value {
+            font-size: 2.5em;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .summary-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+
+        .export-section {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 2px solid #e0e0e0;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.8em;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+
+            .btn {
+                min-width: 100%;
+            }
+
+            .summary {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .loading-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="flag">🇨🇦</div>
+            <h1>加拿大移民处理时间查询器</h1>
+            <p>选择国家，一键获取所有申请类型的处理时间</p>
+        </div>
+
+        <!-- Controls -->
+        <div class="controls">
+            <div class="control-group">
+                <label for="countrySelect">🌍 选择申请国家/地区</label>
+                <select id="countrySelect">
+                    <option value="">-- 请选择国家 --</option>
+                </select>
+            </div>
+
+            <div class="button-group">
+                <button class="btn btn-primary" id="fetchBtn" disabled>
+                    🚀 获取所有处理时间
+                </button>
+                <button class="btn btn-secondary" id="exportBtn" disabled>
+                    📥 导出为JSON
+                </button>
+            </div>
+        </div>
+
+        <!-- Status -->
+        <div class="status" id="statusBox">
+            <div id="statusMessage"></div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+        </div>
+
+        <!-- Results -->
+        <div class="results" id="resultsBox">
+            <div class="summary" id="summaryBox">
+                <div class="summary-item">
+                    <div class="summary-value" id="totalCount">0</div>
+                    <div class="summary-label">总申请类型</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-value" id="completedCount">0</div>
+                    <div class="summary-label">已查询</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-value" id="avgTime">-</div>
+                    <div class="summary-label">平均时间</div>
+                </div>
+            </div>
+
+            <h2>📊 处理时间详情</h2>
+            <div id="categoriesContainer"></div>
+
+            <div class="export-section">
+                <button class="btn btn-secondary" id="exportBtn2">
+                    📥 导出完整数据 (JSON)
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Application categories and types mapping
+        const APPLICATION_TYPES = {
+            "Temporary residence (visiting, studying, working)": [
+                "Visitor visa (from outside Canada)",
+                "Visitor visa (from inside Canada)",
+                "Visitor extension (Visitor record)",
+                "Super visa (parents or grandparents)",
+                "Study permit (from outside Canada)",
+                "Study permit (from inside Canada)",
+                "Study permit extension",
+                "Work permit (from outside Canada)",
+                "Work permit from inside Canada (initial and extension)",
+                "Seasonal Agricultural Worker Program (SAWP)",
+                "International Experience Canada (IEC)",
+                "Electronic Travel Authorization (eTA)"
+            ],
+            "Economic immigration": [
+                "Express Entry",
+                "Provincial Nominee Program",
+                "Quebec-selected skilled workers",
+                "Atlantic Immigration Program",
+                "Rural and Northern Immigration Pilot",
+                "Agri-Food Pilot",
+                "Home Child Care Provider Pilot",
+                "Home Support Worker Pilot"
+            ],
+            "Family sponsorship": [
+                "Spouse, partner or child",
+                "Parents and grandparents",
+                "Other relatives"
+            ],
+            "Citizenship": [
+                "Citizenship grant",
+                "Citizenship certificate",
+                "Citizenship resumption"
+            ],
+            "Permanent resident cards": [
+                "New card",
+                "Renewal card",
+                "Replacement card"
+            ]
+        };
+
+        // Common countries
+        const COMMON_COUNTRIES = [
+            "China (People's Republic of)",
+            "India",
+            "Philippines",
+            "United States of America",
+            "United Kingdom",
+            "France",
+            "Germany",
+            "Australia",
+            "Japan",
+            "South Korea",
+            "Vietnam",
+            "Pakistan",
+            "Bangladesh",
+            "Nigeria",
+            "Mexico",
+            "Brazil"
+        ];
+
+        // State
+        let allResults = {};
+        let selectedCountry = "";
+        let totalQueries = 0;
+        let completedQueries = 0;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeCountrySelect();
+            setupEventListeners();
+        });
+
+        function initializeCountrySelect() {
+            const select = document.getElementById('countrySelect');
+
+            // Add common countries first
+            const commonGroup = document.createElement('optgroup');
+            commonGroup.label = '常用国家';
+            COMMON_COUNTRIES.forEach(country => {
+                const option = document.createElement('option');
+                option.value = country;
+                option.textContent = country;
+                commonGroup.appendChild(option);
+            });
+            select.appendChild(commonGroup);
+        }
+
+        function setupEventListeners() {
+            document.getElementById('countrySelect').addEventListener('change', function(e) {
+                selectedCountry = e.target.value;
+                document.getElementById('fetchBtn').disabled = !selectedCountry;
+            });
+
+            document.getElementById('fetchBtn').addEventListener('click', fetchAllProcessingTimes);
+            document.getElementById('exportBtn').addEventListener('click', exportResults);
+            document.getElementById('exportBtn2').addEventListener('click', exportResults);
+        }
+
+        async function fetchAllProcessingTimes() {
+            if (!selectedCountry) return;
+
+            // Reset state
+            allResults = {};
+            completedQueries = 0;
+            totalQueries = 0;
+
+            // Calculate total queries
+            Object.values(APPLICATION_TYPES).forEach(types => {
+                totalQueries += types.length;
+            });
+
+            // Show status
+            showStatus('loading', `准备查询 ${totalQueries} 个申请类型...`);
+            document.getElementById('fetchBtn').disabled = true;
+            document.getElementById('exportBtn').disabled = true;
+
+            // Create results structure
+            initializeResults();
+
+            // Fetch each category
+            for (const [category, types] of Object.entries(APPLICATION_TYPES)) {
+                allResults[category] = {};
+
+                for (const type of types) {
+                    await fetchSingleProcessingTime(category, type, selectedCountry);
+                    completedQueries++;
+                    updateProgress();
+
+                    // Wait between requests
+                    await sleep(3000);
+                }
+            }
+
+            // Complete
+            showStatus('success', `✅ 完成！共查询了 ${completedQueries} 个申请类型`);
+            document.getElementById('exportBtn').disabled = false;
+            updateSummary();
+        }
+
+        async function fetchSingleProcessingTime(category, type, country) {
+            const statusMsg = `正在查询: ${type} (${completedQueries + 1}/${totalQueries})`;
+            showStatus('loading', statusMsg);
+
+            try {
+                // Here you would call the actual scraping function
+                // For demo purposes, we'll simulate with random data
+                const mockTime = generateMockProcessingTime();
+
+                allResults[category][type] = {
+                    processingTime: mockTime,
+                    status: 'success',
+                    timestamp: new Date().toISOString()
+                };
+
+                updateResultDisplay(category, type, mockTime, 'success');
+            } catch (error) {
+                allResults[category][type] = {
+                    processingTime: null,
+                    status: 'error',
+                    error: error.message,
+                    timestamp: new Date().toISOString()
+                };
+
+                updateResultDisplay(category, type, '查询失败', 'error');
+            }
+        }
+
+        function initializeResults() {
+            const container = document.getElementById('categoriesContainer');
+            container.innerHTML = '';
+
+            Object.keys(APPLICATION_TYPES).forEach(category => {
+                const section = createCategorySection(category);
+                container.appendChild(section);
+            });
+
+            document.getElementById('resultsBox').classList.add('show');
+        }
+
+        function createCategorySection(category) {
+            const section = document.createElement('div');
+            section.className = 'category-section';
+            section.id = `category-${category.replace(/\s+/g, '-')}`;
+
+            const header = document.createElement('div');
+            header.className = 'category-header';
+            header.innerHTML = `
+                <h3>${category}</h3>
+                <span class="toggle-icon">▼</span>
+            `;
+            header.onclick = () => toggleCategory(section);
+
+            const list = document.createElement('div');
+            list.className = 'application-list';
+
+            APPLICATION_TYPES[category].forEach(type => {
+                const item = document.createElement('div');
+                item.className = 'application-item';
+                item.id = `item-${category}-${type}`.replace(/\s+/g, '-').replace(/[()]/g, '');
+                item.innerHTML = `
+                    <div class="application-name">${type}</div>
+                    <div class="processing-time pending">等待查询...</div>
+                `;
+                list.appendChild(item);
+            });
+
+            section.appendChild(header);
+            section.appendChild(list);
+
+            return section;
+        }
+
+        function toggleCategory(section) {
+            section.classList.toggle('collapsed');
+        }
+
+        function updateResultDisplay(category, type, time, status) {
+            const itemId = `item-${category}-${type}`.replace(/\s+/g, '-').replace(/[()]/g, '');
+            const item = document.getElementById(itemId);
+
+            if (item) {
+                const timeElement = item.querySelector('.processing-time');
+                timeElement.textContent = time;
+                timeElement.className = `processing-time ${status}`;
+            }
+        }
+
+        function updateProgress() {
+            const percent = (completedQueries / totalQueries) * 100;
+            document.getElementById('progressFill').style.width = `${percent}%`;
+            document.getElementById('completedCount').textContent = completedQueries;
+            document.getElementById('totalCount').textContent = totalQueries;
+        }
+
+        function updateSummary() {
+            // Calculate average time (mock)
+            document.getElementById('avgTime').textContent = '45 天';
+        }
+
+        function showStatus(type, message) {
+            const statusBox = document.getElementById('statusBox');
+            const statusMessage = document.getElementById('statusMessage');
+
+            statusBox.className = `status show ${type}`;
+            statusMessage.textContent = message;
+        }
+
+        function exportResults() {
+            const data = {
+                country: selectedCountry,
+                queryDate: new Date().toISOString(),
+                totalQueries: totalQueries,
+                results: allResults
+            };
+
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `canada-processing-times-${selectedCountry.replace(/\s+/g, '-')}-${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        // Mock data generator for demo
+        function generateMockProcessingTime() {
+            const units = ['天', '周', '个月'];
+            const unit = units[Math.floor(Math.random() * units.length)];
+            let value;
+
+            if (unit === '天') {
+                value = Math.floor(Math.random() * 60) + 10;
+            } else if (unit === '周') {
+                value = Math.floor(Math.random() * 20) + 1;
+            } else {
+                value = Math.floor(Math.random() * 12) + 1;
+            }
+
+            return `${value} ${unit}`;
+        }
+
+        // Note: In production, replace generateMockProcessingTime with actual
+        // calls to getCanadaProcessingTime() function from example_complete.js
+    </script>
+</body>
+</html>

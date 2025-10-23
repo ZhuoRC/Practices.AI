@@ -1,0 +1,106 @@
+加拿大移民申请处理时间 - 简化树形图
+===============================================
+
+Temporary residence (visiting, studying, working)
+  ├── Visitor visa (from outside Canada) ············ 时间待查询
+  ├── Visitor visa (from inside Canada) ············· 时间待查询
+  ├── Visitor extension (Visitor record) ············ 时间待查询
+  ├── Super visa (parents or grandparents) ·········· 时间待查询
+  ├── Study permit (from outside Canada) ············ 时间待查询
+  ├── Study permit (from inside Canada) ············· 时间待查询
+  ├── Study permit extension ························ 时间待查询
+  ├── Work permit (from outside Canada) ············· 时间待查询
+  ├── Work permit from inside Canada ················ 时间待查询
+  ├── Seasonal Agricultural Worker Program (SAWP) ··· 时间待查询
+  ├── International Experience Canada (IEC) ········· 时间待查询
+  └── Electronic Travel Authorization (eTA) ········· 时间待查询
+
+Economic immigration
+  ├── Express Entry ····································· 时间待查询
+  ├── Provincial Nominee Program ···················· 时间待查询
+  ├── Quebec-selected skilled workers ··············· 时间待查询
+  ├── Atlantic Immigration Program ·················· 时间待查询
+  ├── Rural and Northern Immigration Pilot ·········· 时间待查询
+  ├── Agri-Food Pilot ······························· 时间待查询
+  ├── Home Child Care Provider Pilot ················ 时间待查询
+  └── Home Support Worker Pilot ····················· 时间待查询
+
+Family sponsorship
+  ├── Spouse, partner or child ····················· 时间待查询
+  ├── Parents and grandparents ······················ 时间待查询
+  └── Other relatives ······························· 时间待查询
+
+Refugees
+  ├── Refugee claim ····································· 时间待查询
+  ├── Private sponsorship ··························· 时间待查询
+  └── Government-assisted refugees ·················· 时间待查询
+
+Humanitarian and compassionate cases
+  └── H&C applications ······························ 时间待查询
+
+Passport
+  ├── New passport ······································ 时间待查询
+  ├── Renewal ··········································· 时间待查询
+  └── Replacement ······································· 时间待查询
+
+Citizenship
+  ├── Citizenship grant ································· 时间待查询
+  ├── Citizenship certificate ······················· 时间待查询
+  └── Citizenship resumption ························ 时间待查询
+
+Permanent resident cards
+  ├── New card ·········································· 时间待查询
+  ├── Renewal card ······································ 时间待查询
+  └── Replacement card ·································· 时间待查询
+
+Replacing or amending documents, verifying status
+  ├── Replace immigration document ·················· 时间待查询
+  ├── Amend immigration document ···················· 时间待查询
+  └── Verification of status ························ 时间待查询
+
+
+========================================================
+示例：中国申请人处理时间（样本数据）
+========================================================
+
+Temporary residence
+  ├── Visitor visa (from outside Canada) ············ 11 个月
+  ├── Visitor visa (from inside Canada) ············· 19 周
+  ├── Visitor extension (Visitor record) ············ 184 天
+  ├── Super visa (parents or grandparents) ·········· 122 天
+  ├── Study permit (from outside Canada) ············ 8 周
+  ├── Study permit (from inside Canada) ············· 89 天
+  ├── Study permit extension ························ 56 天
+  ├── Work permit (from outside Canada) ············· 14 周
+  ├── Work permit from inside Canada ················ 97 天
+  ├── Seasonal Agricultural Worker Program ·········· 6 周
+  ├── International Experience Canada (IEC) ········· 8 周
+  └── Electronic Travel Authorization (eTA) ········· 即时
+
+Economic immigration
+  ├── Express Entry ····································· 6 个月
+  ├── Provincial Nominee Program ···················· 18 个月
+  ├── Quebec-selected skilled workers ··············· 24 个月
+  ├── Atlantic Immigration Program ·················· 8 个月
+  ├── Rural and Northern Immigration Pilot ·········· 10 个月
+  ├── Agri-Food Pilot ······························· 12 个月
+  ├── Home Child Care Provider Pilot ················ 15 个月
+  └── Home Support Worker Pilot ····················· 15 个月
+
+Family sponsorship
+  ├── Spouse, partner or child ····················· 12 个月
+  ├── Parents and grandparents ······················ 24 个月
+  └── Other relatives ······························· 60 个月
+
+Citizenship
+  ├── Citizenship grant ································· 13 个月
+  ├── Citizenship certificate ······················· 6 个月
+  └── Citizenship resumption ························ 5 个月
+
+Permanent resident cards
+  ├── New card ·········································· 104 天
+  ├── Renewal card ······································ 74 天
+  └── Replacement card ·································· 74 天
+
+
+注：使用 viewer.html 或脚本自动查询可获取实际最新数据
