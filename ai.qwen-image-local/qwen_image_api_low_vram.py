@@ -86,11 +86,17 @@ async def load_model():
         # Load the pipeline
         logger.info("\nLoading pipeline from pretrained model...")
         logger.info("(This may take several minutes on first run)")
+        
+        torch.backends.cuda.matmul.allow_tf32 = True
+        torch.autocast("cuda", enabled=False)
 
         pipe = DiffusionPipeline.from_pretrained(
             model_name,
-            torch_dtype=torch_dtype,
+            # torch_dtype=torch_dtype,
+            dtype=torch.float16,
             use_safetensors=True
+            # device_map="auto",
+            # use_xformers=False      
         )
 
         if torch.cuda.is_available():
@@ -248,9 +254,9 @@ async def generate_image(request: ImageGenerationRequest):
         prompt = request.prompt
         if request.enhance_prompt:
             if any('\u4e00' <= char <= '\u9fff' for char in prompt):
-                prompt = f"{prompt}, 超清，4K，电影级构图."
+                prompt = f"{prompt}, 电影级构图."
             else:
-                prompt = f"{prompt}, Ultra HD, 4K, cinematic composition."
+                prompt = f"{prompt}, cinematic composition."
 
         logger.info(f"Prompt: {prompt}")
         logger.info(f"Size: {request.width}x{request.height}")
