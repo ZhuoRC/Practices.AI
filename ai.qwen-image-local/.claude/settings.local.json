@@ -4,7 +4,11 @@
       "WebSearch",
       "Bash(python:*)",
       "Bash(.venv/Scripts/python.exe:*)",
-      "Bash(.venv/Scripts/pip:*)"
+      "Bash(.venv/Scripts/pip:*)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(pip show:*)",
+      "Bash(nvidia-smi:*)"
     ],
     "deny": [],
     "ask": []
