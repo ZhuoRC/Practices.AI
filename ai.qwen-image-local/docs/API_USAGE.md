@@ -14,6 +14,8 @@ A RESTful API server for text-to-image generation using the Qwen-Image model.
 
 ## Installation
 
+python -m venv .venv
+
 ### 1. Install Dependencies
 
 First, install the required packages:
@@ -23,7 +25,9 @@ First, install the required packages:
 pip install git+https://github.com/huggingface/diffusers
 
 # Install other requirements
+pip install -r requirements_pytorch.txt
 pip install -r requirements_api.txt
+
 ```
 
 ### 2. GPU Setup (Optional but Recommended)
