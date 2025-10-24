@@ -79,7 +79,7 @@ async def load_model():
             torch_dtype = torch.float16
             logger.info("Using torch.float16 for maximum memory efficiency")
         else:
-            torch_dtype = torch.float32
+            torch_dtype = torch.float16
             device = "cpu"
             logger.info("GPU not available, using CPU")
 
@@ -87,17 +87,18 @@ async def load_model():
         logger.info("\nLoading pipeline from pretrained model...")
         logger.info("(This may take several minutes on first run)")
         
-        torch.backends.cuda.matmul.allow_tf32 = True
-        torch.autocast("cuda", enabled=False)
+        # torch.backends.cuda.matmul.allow_tf32 = True
+        # torch.autocast("cuda", enabled=False)
 
         pipe = DiffusionPipeline.from_pretrained(
             model_name,
-            # torch_dtype=torch_dtype,
-            dtype=torch.float16,
-            use_safetensors=True
+            torch_dtype=torch_dtype,
+            # dtype=torch.float16,
+            use_safetensors=True,
             # device_map="auto",
             # use_xformers=False      
         )
+
 
         if torch.cuda.is_available():
             logger.info("\n" + "=" * 60)
