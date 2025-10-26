@@ -14,10 +14,17 @@ import base64
 from PIL import Image
 import uvicorn
 import logging
+import os
+from datetime import datetime
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Create images directory if it doesn't exist
+IMAGES_DIR = os.path.join(os.path.dirname(__file__), "images")
+os.makedirs(IMAGES_DIR, exist_ok=True)
+logger.info(f"Images will be saved to: {IMAGES_DIR}")
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -148,6 +155,13 @@ async def generate_image(request: ImageGenerationRequest):
 
         # Get the generated image
         image = result.images[0]
+
+        # Save image to local images folder
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"generated_{timestamp}.png"
+        filepath = os.path.join(IMAGES_DIR, filename)
+        image.save(filepath)
+        logger.info(f"Image saved to: {filepath}")
 
         # Convert to base64 or binary
         if request.return_base64:
