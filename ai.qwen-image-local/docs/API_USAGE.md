@@ -24,8 +24,14 @@ First, install the required packages:
 # Install the latest diffusers from GitHub
 pip install git+https://github.com/huggingface/diffusers
 
+
+# Step 1: 先装 PyTorch 生态
+pip install torch==2.5.1+cu121 torchvision==0.20.1+cu121 torchaudio==2.5.1+cu121 --index-url https://download.pytorch.org/whl/cu121
+
+# Step 2: 再强制装 xformers，不检查依赖
+pip install xformers==0.0.27 --no-deps
+
 # Install other requirements
-pip install -r requirements_pytorch.txt
 pip install -r requirements_api.txt
 
 ```
