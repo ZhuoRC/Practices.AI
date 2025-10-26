@@ -8,6 +8,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import Response
 from pydantic import BaseModel, Field
 from typing import Optional
+from contextlib import asynccontextmanager
 import torch
 from diffusers import DiffusionPipeline
 import io
@@ -23,17 +24,10 @@ from datetime import datetime
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Create images directory if it doesn't exist
-IMAGES_DIR = os.path.join(os.path.dirname(__file__), "images")
+# Create images directory with model-specific subfolder
+IMAGES_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "images", "qwen-image")
 os.makedirs(IMAGES_DIR, exist_ok=True)
 logger.info(f"Images will be saved to: {IMAGES_DIR}")
-
-# Initialize FastAPI app
-app = FastAPI(
-    title="Qwen-Image API (Low VRAM)",
-    description="RESTful API optimized for GPUs with limited VRAM (6-8GB)",
-    version="1.0.0"
-)
 
 # Global variable to store the pipeline
 pipe = None
@@ -64,8 +58,8 @@ def cleanup_memory():
         torch.cuda.synchronize()
         torch.cuda.ipc_collect()
 
-@app.on_event("startup")
-async def load_model():
+@asynccontextmanager
+async def lifespan(app: FastAPI):
     """Load the Qwen-Image model with aggressive memory optimizations"""
     global pipe
 
@@ -162,6 +156,20 @@ async def load_model():
         logger.error("3. Try restarting your system")
         logger.error("4. Consider using CPU mode (slower but more reliable)")
         raise
+
+    # Yield control back to the application
+    yield
+
+    # Cleanup on shutdown (if needed)
+    logger.info("Shutting down...")
+
+# Initialize FastAPI app with lifespan
+app = FastAPI(
+    title="Qwen-Image API (Low VRAM)",
+    description="RESTful API optimized for GPUs with limited VRAM (6-8GB)",
+    version="1.0.0",
+    lifespan=lifespan
+)
 
 @app.get("/")
 async def root():

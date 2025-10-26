@@ -27,7 +27,7 @@ This project provides two separate API servers:
 
 ### Common Features
 - Built with FastAPI for high performance and automatic documentation
-- Automatic image saving to local directory
+- Automatic image saving to model-specific folders (organized by API type)
 - Health check endpoints with GPU memory statistics
 - Separate ports for each service (can run simultaneously)
 
@@ -488,6 +488,17 @@ python qwen_image_edit/qwen_image_edit_api.py
 - **Generation (Low VRAM)**: 8011
 - **Editing (Standard)**: 8020
 - **Editing (Low VRAM)**: 8021
+
+### Image Storage Locations
+
+All generated and edited images are automatically saved with timestamps to model-specific folders:
+
+- **Generation (Standard)**: `images/qwen-image/generated_YYYYMMDD_HHMMSS.png`
+- **Generation (Low VRAM)**: `images/qwen-image-low-vram/generated_YYYYMMDD_HHMMSS.png`
+- **Editing (Standard)**: `images/qwen-image-edit/edited_YYYYMMDD_HHMMSS.png`
+- **Editing (Low VRAM)**: `images/qwen-image-edit-low-vram/edited_YYYYMMDD_HHMMSS.png`
+
+This organization makes it easy to track which model version produced each image.
 
 ## License
 
