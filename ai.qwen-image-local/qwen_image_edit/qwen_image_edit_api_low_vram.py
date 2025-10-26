@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 """
-Qwen-Image RESTful API Server (Low VRAM Version)
+Qwen-Image-Edit RESTful API Server (Low VRAM Version)
 Optimized for GPUs with 6-8GB VRAM
 Uses aggressive memory optimizations including sequential CPU offload
 """
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, UploadFile, File, Form
 from fastapi.responses import Response
 from pydantic import BaseModel, Field
 from typing import Optional
 import torch
-from diffusers import DiffusionPipeline
+from diffusers import QwenImageEditPipeline
 import io
 import base64
 from PIL import Image
@@ -24,13 +24,13 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Create images directory if it doesn't exist
-IMAGES_DIR = os.path.join(os.path.dirname(__file__), "images")
+IMAGES_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "images")
 os.makedirs(IMAGES_DIR, exist_ok=True)
-logger.info(f"Images will be saved to: {IMAGES_DIR}")
+logger.info(f"Edited images will be saved to: {IMAGES_DIR}")
 
 # Initialize FastAPI app
 app = FastAPI(
-    title="Qwen-Image API (Low VRAM)",
+    title="Qwen-Image-Edit API (Low VRAM)",
     description="RESTful API optimized for GPUs with limited VRAM (6-8GB)",
     version="1.0.0"
 )
@@ -38,20 +38,8 @@ app = FastAPI(
 # Global variable to store the pipeline
 pipe = None
 
-class ImageGenerationRequest(BaseModel):
-    """Request model for image generation"""
-    prompt: str = Field(..., description="Text prompt to generate image from")
-    negative_prompt: Optional[str] = Field(default="blurry, distorted, low quality, artifacts", description="Negative prompt")
-    width: Optional[int] = Field(default=768, description="Image width (reduced default)", ge=256, le=1024)
-    height: Optional[int] = Field(default=768, description="Image height (reduced default)", ge=256, le=1024)
-    num_inference_steps: Optional[int] = Field(default=10, description="Number of inference steps (reduced)", ge=10, le=50)
-    true_cfg_scale: Optional[float] = Field(default=4.0, description="Guidance scale", ge=1.0, le=20.0)
-    seed: Optional[int] = Field(default=None, description="Random seed for reproducibility")
-    enhance_prompt: Optional[bool] = Field(default=True, description="Add magic prompt enhancement")
-    return_base64: Optional[bool] = Field(default=False, description="Return image as base64 string instead of binary")
-
-class ImageGenerationResponse(BaseModel):
-    """Response model for image generation"""
+class ImageEditResponse(BaseModel):
+    """Response model for image editing"""
     success: bool
     message: str
     image_base64: Optional[str] = None
@@ -66,14 +54,14 @@ def cleanup_memory():
 
 @app.on_event("startup")
 async def load_model():
-    """Load the Qwen-Image model with aggressive memory optimizations"""
+    """Load the Qwen-Image-Edit model with aggressive memory optimizations"""
     global pipe
 
     try:
         logger.info("=" * 60)
-        logger.info("Loading Qwen-Image model (LOW VRAM MODE)")
+        logger.info("Loading Qwen-Image-Edit-2509 model (LOW VRAM MODE)")
         logger.info("=" * 60)
-        model_name = "Qwen/Qwen-Image"
+        model_name = "Qwen/Qwen-Image-Edit-2509"
 
         # Check GPU
         if torch.cuda.is_available():
@@ -82,7 +70,7 @@ async def load_model():
             logger.info(f"GPU: {torch.cuda.get_device_name(0)}")
             logger.info(f"Total GPU Memory: {gpu_mem:.1f} GB")
 
-            # Use bfloat16 for better numerical stability (prevents NaN values)
+            # Use bfloat16 for better numerical stability
             torch_dtype = torch.bfloat16
             logger.info("Using torch.bfloat16 for memory efficiency and numerical stability")
         else:
@@ -93,17 +81,11 @@ async def load_model():
         # Load the pipeline
         logger.info("\nLoading pipeline from pretrained model...")
         logger.info("(This may take several minutes on first run)")
-        
-        # torch.backends.cuda.matmul.allow_tf32 = True
-        # torch.autocast("cuda", enabled=False)
 
-        pipe = DiffusionPipeline.from_pretrained(
+        pipe = QwenImageEditPipeline.from_pretrained(
             model_name,
             torch_dtype=torch_dtype,
-            # dtype=torch.float16,
             use_safetensors=True,
-            # device_map="auto",
-            # use_xformers=False      
         )
 
         if torch.cuda.is_available():
@@ -121,9 +103,6 @@ async def load_model():
                 logger.info("✓ Enabled VAE slicing")
 
             # 3. VAE tiling - DISABLED (conflicts with sequential CPU offload)
-            # if hasattr(pipe, 'enable_vae_tiling'):
-            #     pipe.enable_vae_tiling()
-            #     logger.info("✓ Enabled VAE tiling")
             logger.info("✓ VAE tiling disabled (incompatible with CPU offload)")
 
             # 4. Use sequential CPU offload for lowest VRAM usage
@@ -167,14 +146,14 @@ async def load_model():
 async def root():
     """Root endpoint with API information"""
     return {
-        "name": "Qwen-Image API (Low VRAM Mode)",
+        "name": "Qwen-Image-Edit API (Low VRAM Mode)",
         "status": "running",
-        "model": "Qwen/Qwen-Image",
+        "model": "Qwen/Qwen-Image-Edit-2509",
         "mode": "Low VRAM - Sequential CPU Offload",
         "optimizations": [
             "Sequential CPU offload",
             "Aggressive attention slicing",
-            "VAE slicing and tiling",
+            "VAE slicing",
             "FP16 precision",
             "Automatic memory cleanup"
         ],
@@ -186,7 +165,7 @@ async def root():
             "recommended_steps": "20-30"
         },
         "endpoints": {
-            "/generate": "POST - Generate image from text prompt",
+            "/edit": "POST - Edit image with text prompt",
             "/health": "GET - Health check with memory stats",
             "/cleanup": "POST - Force cleanup GPU memory",
             "/docs": "GET - API documentation"
@@ -236,10 +215,21 @@ async def cleanup():
 
     return result
 
-@app.post("/generate")
-async def generate_image(request: ImageGenerationRequest):
+@app.post("/edit")
+async def edit_image(
+    prompt: str = Form(..., description="Text prompt describing desired edits"),
+    image: Optional[UploadFile] = File(None, description="Input image file"),
+    image_base64: Optional[str] = Form(None, description="Input image as base64 string"),
+    negative_prompt: Optional[str] = Form("blurry, distorted, low quality, artifacts", description="Negative prompt"),
+    width: Optional[int] = Form(None, description="Output image width (None = keep original)"),
+    height: Optional[int] = Form(None, description="Output image height (None = keep original)"),
+    num_inference_steps: Optional[int] = Form(30, description="Number of inference steps (reduced default)", ge=10, le=50),
+    guidance_scale: Optional[float] = Form(7.5, description="Guidance scale", ge=1.0, le=20.0),
+    seed: Optional[int] = Form(None, description="Random seed for reproducibility"),
+    return_base64: Optional[bool] = Form(False, description="Return image as base64 string instead of binary")
+):
     """
-    Generate an image from a text prompt (LOW VRAM version)
+    Edit an image based on a text prompt (LOW VRAM version)
 
     Optimized for GPUs with 6-8GB VRAM
     """
@@ -247,28 +237,37 @@ async def generate_image(request: ImageGenerationRequest):
         raise HTTPException(status_code=503, detail="Model not loaded")
 
     try:
-        # Aggressive cleanup before generation
+        # Aggressive cleanup before editing
         logger.info("\n" + "=" * 60)
-        logger.info("Starting image generation (LOW VRAM MODE)")
+        logger.info("Starting image editing (LOW VRAM MODE)")
         logger.info("=" * 60)
         cleanup_memory()
 
+        # Load input image
+        input_img = None
+        if image is not None:
+            # Load from uploaded file
+            img_bytes = await image.read()
+            input_img = Image.open(io.BytesIO(img_bytes)).convert("RGB")
+        elif image_base64 is not None:
+            # Load from base64 string
+            img_data = base64.b64decode(image_base64)
+            input_img = Image.open(io.BytesIO(img_data)).convert("RGB")
+        else:
+            raise HTTPException(status_code=400, detail="Either 'image' file or 'image_base64' must be provided")
+
         # Validate and warn about large sizes
-        if request.width > 1024 or request.height > 1024:
-            logger.warning(f"⚠️  Large image size requested: {request.width}x{request.height}")
+        target_width = width if width is not None else input_img.size[0]
+        target_height = height if height is not None else input_img.size[1]
+
+        if target_width > 1024 or target_height > 1024:
+            logger.warning(f"⚠️  Large image size requested: {target_width}x{target_height}")
             logger.warning("   This may cause OOM errors. Consider using 768x768 or smaller.")
 
-        # Enhance prompt if requested
-        prompt = request.prompt
-        if request.enhance_prompt:
-            if any('\u4e00' <= char <= '\u9fff' for char in prompt):
-                prompt = f"{prompt}, 电影级构图."
-            else:
-                prompt = f"{prompt}, cinematic composition."
-
         logger.info(f"Prompt: {prompt}")
-        logger.info(f"Size: {request.width}x{request.height}")
-        logger.info(f"Steps: {request.num_inference_steps}")
+        logger.info(f"Input size: {input_img.size}")
+        logger.info(f"Output size: {target_width}x{target_height}")
+        logger.info(f"Steps: {num_inference_steps}")
 
         if torch.cuda.is_available():
             mem_before = torch.cuda.memory_allocated(0) / 1024**3
@@ -276,37 +275,44 @@ async def generate_image(request: ImageGenerationRequest):
 
         # Prepare generator for seed
         generator = None
-        if request.seed is not None:
-            # Generator should match model device (CUDA even with sequential offload)
+        if seed is not None:
             device = "cuda" if torch.cuda.is_available() else "cpu"
-            generator = torch.Generator(device=device).manual_seed(request.seed)
-            logger.info(f"Seed: {request.seed}")
+            generator = torch.Generator(device=device).manual_seed(seed)
+            logger.info(f"Seed: {seed}")
 
-        # Generate image with inference mode
-        logger.info("\nGenerating image...")
+        # Prepare editing parameters
+        edit_params = {
+            "prompt": prompt,
+            "image": input_img,
+            "negative_prompt": negative_prompt,
+            "num_inference_steps": num_inference_steps,
+            "guidance_scale": guidance_scale,
+            "generator": generator
+        }
+
+        # Add width/height if specified
+        if width is not None:
+            edit_params["width"] = width
+        if height is not None:
+            edit_params["height"] = height
+
+        # Edit image with inference mode
+        logger.info("\nEditing image...")
         with torch.inference_mode():
-            result = pipe(
-                prompt=prompt,
-                negative_prompt=request.negative_prompt,
-                width=request.width,
-                height=request.height,
-                num_inference_steps=request.num_inference_steps,
-                true_cfg_scale=request.true_cfg_scale,
-                generator=generator
-            )
+            result = pipe(**edit_params)
 
-        # Get the generated image
-        image = result.images[0]
-        logger.info("✓ Image generated successfully!")
+        # Get the edited image
+        edited_image = result.images[0]
+        logger.info("✓ Image edited successfully!")
 
         # Save image to local images folder
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"generated_{timestamp}.png"
+        filename = f"edited_{timestamp}.png"
         filepath = os.path.join(IMAGES_DIR, filename)
-        image.save(filepath)
-        logger.info(f"Image saved to: {filepath}")
+        edited_image.save(filepath)
+        logger.info(f"Edited image saved to: {filepath}")
 
-        # Aggressive cleanup after generation
+        # Aggressive cleanup after editing
         cleanup_memory()
 
         if torch.cuda.is_available():
@@ -314,20 +320,20 @@ async def generate_image(request: ImageGenerationRequest):
             logger.info(f"GPU memory after: {mem_after:.2f} GB")
 
         # Convert to base64 or binary
-        if request.return_base64:
+        if return_base64:
             buffered = io.BytesIO()
-            image.save(buffered, format="PNG")
+            edited_image.save(buffered, format="PNG")
             img_str = base64.b64encode(buffered.getvalue()).decode()
 
             logger.info("=" * 60 + "\n")
-            return ImageGenerationResponse(
+            return ImageEditResponse(
                 success=True,
-                message="Image generated successfully",
+                message="Image edited successfully",
                 image_base64=img_str
             )
         else:
             buffered = io.BytesIO()
-            image.save(buffered, format="PNG")
+            edited_image.save(buffered, format="PNG")
             buffered.seek(0)
 
             logger.info("=" * 60 + "\n")
@@ -335,7 +341,7 @@ async def generate_image(request: ImageGenerationRequest):
                 content=buffered.getvalue(),
                 media_type="image/png",
                 headers={
-                    "Content-Disposition": "inline; filename=generated_image.png"
+                    "Content-Disposition": "inline; filename=edited_image.png"
                 }
             )
 
@@ -346,7 +352,7 @@ async def generate_image(request: ImageGenerationRequest):
         cleanup_memory()
 
         suggestions = [
-            "Reduce image size to 512x512 or 768x768",
+            "Reduce output size to 512x512 or 768x768",
             "Reduce num_inference_steps to 15-20",
             "Close all other GPU applications",
             "Restart the API server to clear memory",
@@ -361,12 +367,12 @@ async def generate_image(request: ImageGenerationRequest):
             status_code=507,
             detail={
                 "error": "GPU out of memory",
-                "message": "The requested image generation exceeded available GPU memory",
+                "message": "The requested image editing exceeded available GPU memory",
                 "suggestions": suggestions,
                 "your_request": {
-                    "width": request.width,
-                    "height": request.height,
-                    "steps": request.num_inference_steps
+                    "width": width,
+                    "height": height,
+                    "steps": num_inference_steps
                 },
                 "try_instead": {
                     "width": 512,
@@ -376,18 +382,18 @@ async def generate_image(request: ImageGenerationRequest):
             }
         )
     except Exception as e:
-        logger.error(f"\n❌ Error generating image: {e}")
+        logger.error(f"\n❌ Error editing image: {e}")
         cleanup_memory()
         raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":
     logger.info("\n" + "=" * 60)
-    logger.info("Starting Qwen-Image API Server (LOW VRAM MODE)")
+    logger.info("Starting Qwen-Image-Edit API Server (LOW VRAM MODE)")
     logger.info("=" * 60 + "\n")
 
     uvicorn.run(
         app,
         host="0.0.0.0",
-        port=8000,
+        port=8021,
         log_level="info"
     )
