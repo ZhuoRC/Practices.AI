@@ -44,7 +44,7 @@ class ImageGenerationRequest(BaseModel):
     negative_prompt: Optional[str] = Field(default="blurry, distorted, low quality, artifacts", description="Negative prompt")
     width: Optional[int] = Field(default=768, description="Image width (reduced default)", ge=256, le=1024)
     height: Optional[int] = Field(default=768, description="Image height (reduced default)", ge=256, le=1024)
-    num_inference_steps: Optional[int] = Field(default=25, description="Number of inference steps (reduced)", ge=10, le=50)
+    num_inference_steps: Optional[int] = Field(default=10, description="Number of inference steps (reduced)", ge=10, le=50)
     true_cfg_scale: Optional[float] = Field(default=4.0, description="Guidance scale", ge=1.0, le=20.0)
     seed: Optional[int] = Field(default=None, description="Random seed for reproducibility")
     enhance_prompt: Optional[bool] = Field(default=True, description="Add magic prompt enhancement")

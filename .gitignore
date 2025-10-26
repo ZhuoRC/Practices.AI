@@ -30,3 +30,9 @@ wheels/
 *.swp
 *.swo
 *~
+
+
+# Qwen Image Local
+/ai.qwen-image-local/images/*
+!/ai.qwen-image-local/images/his/
+!/ai.qwen-image-local/images/his/**
