@@ -4,8 +4,11 @@
 
 ### Step 1: Install Dependencies
 ```bash
-pip install git+https://github.com/huggingface/diffusers
-pip install -r requirements_api.txt
+# Install PyTorch with CUDA support first
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+
+# Install other dependencies
+pip install -r requirements.txt
 ```
 
 ### Step 2: Start the API (Low VRAM Version)
@@ -17,10 +20,14 @@ Wait for the model to load (first time will download ~20GB).
 
 ### Step 3: Generate an Image
 ```bash
-python test_api_low_vram.py
+# Using curl
+curl -X POST "http://localhost:8000/generate" \
+  -H "Content-Type: application/json" \
+  -d '{"prompt": "A beautiful sunset", "width": 512, "height": 512}' \
+  --output sunset.png
 ```
 
-Done! Check the generated images in the current directory.
+Done! Check the generated image.
 
 ---
 
@@ -70,14 +77,32 @@ The first run will download the model (~20GB). This may take 10-30 minutes depen
 
 ### 4. Test the API
 
-In a new terminal:
+In a new terminal, use any of these methods:
 
+**Using cURL:**
 ```bash
-# Run the low VRAM test (safe settings)
-python test_api_low_vram.py
+curl -X POST "http://localhost:8000/generate" \
+  -H "Content-Type: application/json" \
+  -d '{"prompt": "A cute cat", "width": 512, "height": 512}' \
+  --output cat.png
+```
 
-# OR run the full test (may cause OOM on small GPUs)
-python test_api_client.py
+**Using Python:**
+```python
+import requests
+
+response = requests.post(
+    "http://localhost:8000/generate",
+    json={
+        "prompt": "A beautiful landscape",
+        "width": 512,
+        "height": 512,
+        "num_inference_steps": 20
+    }
+)
+
+with open("landscape.png", "wb") as f:
+    f.write(response.content)
 ```
 
 ---
@@ -236,7 +261,7 @@ qwen_image_api_low_vram.py     # Low VRAM version (6-10GB VRAM) ⭐
 test_api_client.py             # Full test client
 test_api_low_vram.py           # Safe test client ⭐
 check_gpu.py                   # GPU diagnostic tool
-requirements_api.txt           # Dependencies
+requirements.txt           # Dependencies
 API_USAGE.md                   # Full API documentation
 MEMORY_GUIDE.md                # Memory optimization guide
 QUICK_START.md                 # This file
@@ -272,15 +297,24 @@ QUICK_START.md                 # This file
 python qwen_image_api_low_vram.py
 
 # Terminal 2: Wait for "Model loaded successfully!", then test
-python test_api_low_vram.py
+curl -X POST "http://localhost:8000/generate" \
+  -H "Content-Type: application/json" \
+  -d '{"prompt": "A magical forest", "width": 768, "height": 768}' \
+  --output forest.png
 
-# If successful, try your own prompts:
-python -c "
+# Check the generated forest.png!
+```
+
+**Or using Python:**
+```python
 import requests
+
+# Wait for server to be ready
 r = requests.post('http://localhost:8000/generate',
     json={'prompt': 'a magical forest', 'width': 768, 'height': 768})
-open('forest.png', 'wb').write(r.content)
-"
+
+with open('forest.png', 'wb') as f:
+    f.write(r.content)
 
 # Check the generated forest.png!
 ```

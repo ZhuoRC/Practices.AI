@@ -14,29 +14,32 @@ A RESTful API server for text-to-image generation using the Qwen-Image model.
 
 ## Installation
 
-python -m venv .venv
-
-### 1. Install Dependencies
-
-First, install the required packages:
+### 1. Create Virtual Environment (Recommended)
 
 ```bash
-# Install the latest diffusers from GitHub
-pip install git+https://github.com/huggingface/diffusers
+python -m venv .venv
 
+# Activate on Windows
+.venv\Scripts\activate
 
-# Step 1: 先装 PyTorch 生态
-pip install torch==2.5.1+cu121 torchvision==0.20.1+cu121 torchaudio==2.5.1+cu121 --index-url https://download.pytorch.org/whl/cu121
-
-# Step 2: 再强制装 xformers，不检查依赖
-pip install xformers==0.0.27 --no-deps
-
-# Install other requirements
-pip install -r requirements_api.txt
-
+# Activate on Linux/Mac
+source .venv/bin/activate
 ```
 
-### 2. GPU Setup (Optional but Recommended)
+### 2. Install Dependencies
+
+```bash
+# Install PyTorch with CUDA support
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+
+# Install other requirements
+pip install -r requirements.txt
+
+# Optional: Install xformers for memory efficiency (20-30% VRAM reduction)
+pip install xformers --no-deps
+```
+
+### 3. GPU Setup (Optional but Recommended)
 
 For GPU support, ensure you have:
 - NVIDIA GPU with CUDA support
@@ -130,13 +133,47 @@ response = requests.post(
     json={
         "prompt": "A beautiful sunset over the ocean",
         "width": 1280,
-        "height": 720
+        "height": 720,
+        "num_inference_steps": 30
     }
 )
 
 # Save the image
-with open("sunset.png", "wb") as f:
-    f.write(response.content)
+if response.status_code == 200:
+    with open("sunset.png", "wb") as f:
+        f.write(response.content)
+    print("Image saved as sunset.png")
+else:
+    print(f"Error: {response.status_code}")
+    print(response.text)
+```
+
+### Using Python with Base64 Response
+
+```python
+import requests
+import base64
+from PIL import Image
+import io
+
+response = requests.post(
+    "http://localhost:8000/generate",
+    json={
+        "prompt": "A cute robot",
+        "width": 768,
+        "height": 768,
+        "return_base64": True
+    }
+)
+
+if response.status_code == 200:
+    data = response.json()
+    if data["success"]:
+        # Decode base64 and save
+        img_data = base64.b64decode(data["image_base64"])
+        image = Image.open(io.BytesIO(img_data))
+        image.save("robot.png")
+        print("Image saved as robot.png")
 ```
 
 ### Using cURL
@@ -154,15 +191,7 @@ curl -X POST "http://localhost:8000/generate" \
   --output cat.png
 ```
 
-### Using the Test Client
 
-Run the included test client:
-
-```bash
-python test_api_client.py
-```
-
-This will generate several example images demonstrating different features.
 
 ## Supported Aspect Ratios
 

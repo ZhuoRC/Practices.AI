@@ -1,0 +1,42 @@
+# Qwen-Image Local API Requirements
+# Python 3.9+ recommended
+
+--index-url https://pypi.org/simple
+
+# ==== Core Web Framework ====
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+pydantic>=2.0.0
+
+# ==== Deep Learning Framework ====
+# Note: Install PyTorch with CUDA support separately for GPU acceleration:
+# pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+# Or see: https://pytorch.org/get-started/locally/
+
+# ==== Diffusion Models ====
+diffusers>=0.30.0
+
+# ==== Qwen Image Generation Dependencies ====
+transformers>=4.51.3
+accelerate>=0.33.0
+safetensors>=0.4.5
+sentencepiece>=0.2.0
+modelscope>=1.15.0
+qwen-vl-utils>=0.0.6
+
+# ==== Image and Tensor Utilities ====
+Pillow>=10.0.0
+numpy>=1.26.0
+
+# ==== Progress and Utility Libraries ====
+tqdm>=4.66.0
+einops>=0.8.0
+
+# ==== Optional Dependencies ====
+# xformers - Memory efficient attention (can reduce VRAM usage by 20-30%)
+# Install separately based on your CUDA version:
+# pip install xformers --index-url https://download.pytorch.org/whl/cu121
+# Or: pip install xformers --index-url https://download.pytorch.org/whl/cu118
+
+# wmi - For GPU info on Windows (optional)
+# pip install wmi

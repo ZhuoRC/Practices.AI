@@ -32,10 +32,10 @@ python qwen_image_api_optimized.py
 ```
 
 **Optimizations:**
-- Attention slicing
+- Attention slicing (slice_size=1)
 - VAE slicing and tiling
-- FP16 precision
-- Optional CPU offload for <12GB GPUs
+- Float16 precision
+- Model CPU offload for <12GB GPUs
 
 **Pros:**
 - Good balance of speed and memory
@@ -57,9 +57,9 @@ python qwen_image_api_low_vram.py
 
 **Optimizations:**
 - Sequential CPU offload (most aggressive)
-- Aggressive attention slicing
-- VAE slicing and tiling
-- FP16 precision
+- Aggressive attention slicing (slice_size=1)
+- VAE slicing (tiling disabled for compatibility)
+- BFloat16 precision (better numerical stability)
 - Automatic memory cleanup
 - Lower default resolution (768x768)
 
