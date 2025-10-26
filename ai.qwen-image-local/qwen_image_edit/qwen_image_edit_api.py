@@ -7,6 +7,7 @@ from fastapi import FastAPI, HTTPException, UploadFile, File, Form
 from fastapi.responses import Response
 from pydantic import BaseModel, Field
 from typing import Optional
+from contextlib import asynccontextmanager
 import torch
 from diffusers import QwenImageEditPipeline
 import io
@@ -21,17 +22,10 @@ from datetime import datetime
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Create images directory if it doesn't exist
-IMAGES_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "images")
+# Create images directory with model-specific subfolder
+IMAGES_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "images", "qwen-image-edit")
 os.makedirs(IMAGES_DIR, exist_ok=True)
 logger.info(f"Edited images will be saved to: {IMAGES_DIR}")
-
-# Initialize FastAPI app
-app = FastAPI(
-    title="Qwen-Image-Edit API",
-    description="RESTful API for image editing using Qwen-Image-Edit-2509 model",
-    version="1.0.0"
-)
 
 # Global variable to store the pipeline
 pipe = None
@@ -42,8 +36,8 @@ class ImageEditResponse(BaseModel):
     message: str
     image_base64: Optional[str] = None
 
-@app.on_event("startup")
-async def load_model():
+@asynccontextmanager
+async def lifespan(app: FastAPI):
     """Load the Qwen-Image-Edit model on startup"""
     global pipe
 
@@ -74,6 +68,20 @@ async def load_model():
     except Exception as e:
         logger.error(f"Failed to load model: {e}")
         raise
+
+    # Yield control back to the application
+    yield
+
+    # Cleanup on shutdown (if needed)
+    logger.info("Shutting down...")
+
+# Initialize FastAPI app with lifespan
+app = FastAPI(
+    title="Qwen-Image-Edit API",
+    description="RESTful API for image editing using Qwen-Image-Edit-2509 model",
+    version="1.0.0",
+    lifespan=lifespan
+)
 
 @app.get("/")
 async def root():

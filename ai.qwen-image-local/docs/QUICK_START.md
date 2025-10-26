@@ -425,9 +425,15 @@ docs/                                 # Documentation
 check_gpu.py                          # GPU diagnostic tool
 requirements.txt                      # Dependencies
 images/                               # Generated/edited images saved here
+├── qwen-image/                      # Images from standard generation API
+├── qwen-image-low-vram/             # Images from low VRAM generation API
+├── qwen-image-edit/                 # Images from standard editing API
+└── qwen-image-edit-low-vram/        # Images from low VRAM editing API
 ```
 
 ⭐ = Recommended for most users (6-10GB VRAM)
+
+**Note:** Generated and edited images are automatically organized into model-specific subfolders.
 
 ---
 
