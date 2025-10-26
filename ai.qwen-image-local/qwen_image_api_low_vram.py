@@ -41,7 +41,7 @@ pipe = None
 class ImageGenerationRequest(BaseModel):
     """Request model for image generation"""
     prompt: str = Field(..., description="Text prompt to generate image from")
-    negative_prompt: Optional[str] = Field(default=" ", description="Negative prompt")
+    negative_prompt: Optional[str] = Field(default="blurry, distorted, low quality, artifacts", description="Negative prompt")
     width: Optional[int] = Field(default=768, description="Image width (reduced default)", ge=256, le=1024)
     height: Optional[int] = Field(default=768, description="Image height (reduced default)", ge=256, le=1024)
     num_inference_steps: Optional[int] = Field(default=25, description="Number of inference steps (reduced)", ge=10, le=50)
@@ -82,9 +82,9 @@ async def load_model():
             logger.info(f"GPU: {torch.cuda.get_device_name(0)}")
             logger.info(f"Total GPU Memory: {gpu_mem:.1f} GB")
 
-            # Force float16 for memory efficiency
-            torch_dtype = torch.float16
-            logger.info("Using torch.float16 for maximum memory efficiency")
+            # Use bfloat16 for better numerical stability (prevents NaN values)
+            torch_dtype = torch.bfloat16
+            logger.info("Using torch.bfloat16 for memory efficiency and numerical stability")
         else:
             torch_dtype = torch.float16
             device = "cpu"
@@ -120,10 +120,11 @@ async def load_model():
                 pipe.enable_vae_slicing()
                 logger.info("✓ Enabled VAE slicing")
 
-            # 3. Enable VAE tiling
-            if hasattr(pipe, 'enable_vae_tiling'):
-                pipe.enable_vae_tiling()
-                logger.info("✓ Enabled VAE tiling")
+            # 3. VAE tiling - DISABLED (conflicts with sequential CPU offload)
+            # if hasattr(pipe, 'enable_vae_tiling'):
+            #     pipe.enable_vae_tiling()
+            #     logger.info("✓ Enabled VAE tiling")
+            logger.info("✓ VAE tiling disabled (incompatible with CPU offload)")
 
             # 4. Use sequential CPU offload for lowest VRAM usage
             logger.info("✓ Enabling sequential CPU offload...")
@@ -276,8 +277,9 @@ async def generate_image(request: ImageGenerationRequest):
         # Prepare generator for seed
         generator = None
         if request.seed is not None:
-            # Generator should be on CPU for sequential offload
-            generator = torch.Generator(device="cpu").manual_seed(request.seed)
+            # Generator should match model device (CUDA even with sequential offload)
+            device = "cuda" if torch.cuda.is_available() else "cpu"
+            generator = torch.Generator(device=device).manual_seed(request.seed)
             logger.info(f"Seed: {request.seed}")
 
         # Generate image with inference mode
