@@ -33,6 +33,6 @@ wheels/
 
 
 # Qwen Image Local
-/ai.qwen-image-local/images/*
-!/ai.qwen-image-local/images/his/
-!/ai.qwen-image-local/images/his/**
+/ai.qwen-image-local/qwen_image/output/*
+/ai.qwen-image-local/qwen_image_edit/input/*
+/ai.qwen-image-local/qwen_image_edit/output/*
