@@ -19,6 +19,8 @@ import logging
 import gc
 import os
 from datetime import datetime
+os.environ["USE_FLASH_ATTENTION"] = "0"
+os.environ["ENABLE_FLASH_ATTENTION"] = "0"
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -80,7 +82,7 @@ async def lifespan(app: FastAPI):
             torch_dtype = torch.bfloat16
             logger.info("Using torch.bfloat16 for memory efficiency and numerical stability")
         else:
-            torch_dtype = torch.float16
+            torch_dtype = torch.float32
             device = "cpu"
             logger.info("GPU not available, using CPU")
 
@@ -270,9 +272,9 @@ async def generate_image(request: ImageGenerationRequest):
         prompt = request.prompt
         if request.enhance_prompt:
             if any('\u4e00' <= char <= '\u9fff' for char in prompt):
-                prompt = f"{prompt}, 电影级构图."
+                prompt = f"{prompt}"
             else:
-                prompt = f"{prompt}, cinematic composition."
+                prompt = f"{prompt}"
 
         logger.info(f"Prompt: {prompt}")
         logger.info(f"Size: {request.width}x{request.height}")

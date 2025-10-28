@@ -138,9 +138,9 @@ async def generate_image(request: ImageGenerationRequest):
         if request.enhance_prompt:
             # Check if prompt is in Chinese or English
             if any('\u4e00' <= char <= '\u9fff' for char in prompt):
-                prompt = f"{prompt}, 超清，4K，电影级构图."
+                prompt = f"{prompt}"
             else:
-                prompt = f"{prompt}, Ultra HD, 4K, cinematic composition."
+                prompt = f"{prompt}"
 
         logger.info(f"Generating image with prompt: {prompt}")
 
