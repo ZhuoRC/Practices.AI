@@ -46,7 +46,7 @@ def check_pytorch_cuda():
         import torch
         print(f"[OK] PyTorch 版本: {torch.__version__}")
         print(f"[INFO] CUDA 编译版本: {torch.version.cuda}")
-
+        print(torch.__config__.show())          # Check if Flash Attention is present
         # 检查 xformers 版本
         try:
             import xformers
