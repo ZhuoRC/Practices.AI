@@ -22,8 +22,8 @@ from datetime import datetime
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Create images directory with model-specific subfolder
-IMAGES_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "images", "qwen-image")
+# Create output directory
+IMAGES_DIR = os.path.join(os.path.dirname(__file__), "output")
 os.makedirs(IMAGES_DIR, exist_ok=True)
 logger.info(f"Images will be saved to: {IMAGES_DIR}")
 

@@ -12,6 +12,7 @@ import torch
 from diffusers import QwenImageEditPipeline
 import io
 import base64
+import binascii
 from PIL import Image
 import uvicorn
 import logging
@@ -22,8 +23,8 @@ from datetime import datetime
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Create images directory with model-specific subfolder
-IMAGES_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "images", "qwen-image-edit")
+# Create output directory
+IMAGES_DIR = os.path.join(os.path.dirname(__file__), "output")
 os.makedirs(IMAGES_DIR, exist_ok=True)
 logger.info(f"Edited images will be saved to: {IMAGES_DIR}")
 
@@ -133,18 +134,45 @@ async def edit_image(
         raise HTTPException(status_code=503, detail="Model not loaded")
 
     try:
+        # Normalize empty strings to None for proper validation
+        if image_base64 is not None and image_base64.strip() == "":
+            image_base64 = None
+
+        # Validate that exactly one image input is provided
+        if image is not None and image_base64 is not None:
+            raise HTTPException(
+                status_code=400,
+                detail="Cannot provide both 'image' and 'image_base64'. Please provide only one."
+            )
+
+        if image is None and image_base64 is None:
+            raise HTTPException(
+                status_code=400,
+                detail="Either 'image' file or 'image_base64' must be provided"
+            )
+
         # Load input image
         input_img = None
         if image is not None:
             # Load from uploaded file
+            logger.info("Loading image from uploaded file...")
             img_bytes = await image.read()
+            if len(img_bytes) == 0:
+                raise HTTPException(status_code=400, detail="Uploaded image file is empty")
             input_img = Image.open(io.BytesIO(img_bytes)).convert("RGB")
-        elif image_base64 is not None:
+        else:  # image_base64 is not None
             # Load from base64 string
+            logger.info("Loading image from base64 string...")
             img_data = base64.b64decode(image_base64)
+            if len(img_data) == 0:
+                raise HTTPException(status_code=400, detail="Base64 image data is empty")
             input_img = Image.open(io.BytesIO(img_data)).convert("RGB")
-        else:
-            raise HTTPException(status_code=400, detail="Either 'image' file or 'image_base64' must be provided")
+
+        # Validate that image was successfully loaded
+        if input_img is None:
+            raise HTTPException(status_code=500, detail="Failed to load image")
+
+        logger.info(f"✓ Image loaded successfully: {input_img.size}")
 
         logger.info(f"Editing image with prompt: {prompt}")
         logger.info(f"Input image size: {input_img.size}")
@@ -210,7 +238,11 @@ async def edit_image(
                 }
             )
 
+    except binascii.Error as e:
+        raise HTTPException(status_code=400, detail=f"Invalid base64 encoding: {str(e)}")
     except Exception as e:
+        if isinstance(e, HTTPException):
+            raise
         logger.error(f"Error editing image: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 

@@ -1,22 +1,148 @@
+# ==============================================================================
 # Qwen-Image Local API Requirements
 # Python 3.9+ recommended
-
-# IMPORTANT INSTALLATION ORDER:
-# 1. Install PyTorch with CUDA support first (see below)
-# 2. Install development version of diffusers from GitHub:
-#    pip install git+https://github.com/huggingface/diffusers
-# 3. Install other dependencies:
-#    pip install -r requirements.txt
+# ==============================================================================
+#
+# This project provides two main APIs:
+# 1. Qwen-Image (Text-to-Image Generation) - Ports 8010/8011
+# 2. Qwen-Image-Edit (Image Editing) - Ports 8020/8021
+#
+# Each API has standard and low-VRAM versions for different GPU memory capacities.
+#
+# ==============================================================================
+# INSTALLATION INSTRUCTIONS
+# ==============================================================================
+#
+# STEP 1: Create and activate virtual environment (RECOMMENDED)
+# ---------------------------------------------------------------
+# Windows:
+#   python -m venv .venv
+#   .venv\Scripts\activate
+#
+# Linux/Mac:
+#   python -m venv .venv
+#   source .venv/bin/activate
+#
+# STEP 2: Install PyTorch with CUDA support (REQUIRED FOR GPU)
+# ------------------------------------------------------------
+# Check your CUDA version first: nvidia-smi
+#
+# For CUDA 12.1:
+#   pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+#
+# For CPU only (very slow):
+#   pip install torch torchvision torchaudio
+#
+# See: https://pytorch.org/get-started/locally/
+#
+# STEP 3: Install diffusers from GitHub (REQUIRED for Image Editing)
+# -------------------------------------------------------------------
+# The PyPI version doesn't include QwenImageEditPipeline yet
+#
+#   pip install git+https://github.com/huggingface/diffusers
+#
+# STEP 4: Install other dependencies
+# -----------------------------------
+#   pip install -r requirements.txt
+#
+# STEP 5: Optional - Install xformers (20-30% VRAM reduction)
+# -----------------------------------------------------------
+# For CUDA 12.1:
+#   pip install xformers --index-url https://download.pytorch.org/whl/cu121
+# ==============================================================================
 
 --index-url https://pypi.org/simple
 
-# ==== Core Web Framework ====
-fastapi>=0.104.0
-uvicorn[standard]>=0.24.0
-pydantic>=2.0.0
-python-multipart>=0.0.6
+# ==============================================================================
+# Core Web Framework
+# ==============================================================================
+fastapi>=0.104.0              # Modern web framework with automatic API docs
+uvicorn[standard]>=0.24.0     # ASGI server for FastAPI
+pydantic>=2.0.0               # Data validation and settings management
+python-multipart>=0.0.6       # Required for file uploads in Image Edit API
 
-# ==== Deep Learning Framework ====
+# ==============================================================================
+# Deep Learning Framework
+# ==============================================================================
+# Note: PyTorch (torch, torchvision, torchaudio) must be installed separately
+# with CUDA support as shown in STEP 2 above. Do not install from this file.
+
+# ==============================================================================
+# Diffusion Models and AI Libraries
+# ==============================================================================
+# Note: diffusers must be installed from GitHub (see STEP 3 above)
+# diffusers>=0.36.0 - PyPI versions don't include QwenImageEditPipeline yet
+
+transformers>=4.57.0          # Hugging Face transformers library
+accelerate>=0.33.0            # Hardware acceleration utilities
+safetensors>=0.4.5            # Safe tensor serialization format
+
+# ==============================================================================
+# Qwen-Specific Dependencies
+# ==============================================================================
+sentencepiece>=0.2.0          # Text tokenization for Qwen models
+modelscope>=1.15.0            # ModelScope platform integration
+qwen-vl-utils>=0.0.6          # Qwen Vision-Language utilities
+
+# ==============================================================================
+# Image Processing and Numerical Computing
+# ==============================================================================
+Pillow>=10.0.0                # Python Imaging Library
+numpy>=1.26.0,<2.0            # Numerical computing library
+
+# ==============================================================================
+# Utility Libraries
+# ==============================================================================
+tqdm>=4.66.0                  # Progress bars
+einops>=0.8.0                 # Tensor operations and transformations
+
+# ==============================================================================
+# Optional Dependencies (Install Separately)
+# ==============================================================================
+#
+# xformers - Memory-efficient attention (HIGHLY RECOMMENDED)
+# - Reduces VRAM usage by 20-30%
+# - Install after PyTorch based on your CUDA version:
+#   pip install xformers --index-url https://download.pytorch.org/whl/cu121  # CUDA 12.1
+#   pip install xformers --index-url https://download.pytorch.org/whl/cu118  # CUDA 11.8
+#
+# wmi - GPU information on Windows (optional)
+# - For detailed GPU info display:
+#   pip install wmi
+#
+# ==============================================================================
+# GPU Memory Requirements
+# ==============================================================================
+#
+# Image Generation (Qwen-Image):
+#   - Standard version (qwen_image_api.py):       12-16GB VRAM - Port 8010
+#   - Low VRAM version (qwen_image_api_low_vram.py): 6-10GB VRAM - Port 8011
+#
+# Image Editing (Qwen-Image-Edit-2509):
+#   - Standard version (qwen_image_edit_api.py):       12-16GB VRAM - Port 8020
+#   - Low VRAM version (qwen_image_edit_api_low_vram.py): 6-10GB VRAM - Port 8021
+#
+# Recommended: Use low-VRAM versions for most users (6-10GB GPUs)
+#
+# ==============================================================================
+# Troubleshooting
+# ==============================================================================
+#
+# If you encounter "CUDA out of memory" errors:
+#   1. Use the low-VRAM versions of the APIs
+#   2. Reduce image size (512x512 or 768x768)
+#   3. Reduce num_inference_steps (20-30)
+#   4. Install xformers (see Optional Dependencies above)
+#   5. Close other GPU applications
+#   6. See docs/MEMORY_GUIDE.md for detailed guidance
+#
+# For more information:
+#   - Quick Start: docs/QUICK_START.md
+#   - API Usage: docs/API_USAGE.md
+#   - Memory Guide: docs/MEMORY_GUIDE.md
+#   - Image Editing: docs/IMAGE_EDIT_GUIDE.md
+#
+# ==============================================================================
 # Note: Install PyTorch with CUDA support separately for GPU acceleration:
 
 # python -m venv .venv
@@ -25,58 +151,18 @@ python-multipart>=0.0.6
 
 # pip uninstall -y torch torchvision torchaudio
 # pip install torch==2.3.1+cu121 torchvision==0.18.1+cu121 torchaudio==2.3.1+cu121 --index-url https://download.pytorch.org/whl/cu121
-# pip install torch==2.3.0+cu121 torchvision==0.18.0+cu121 torchaudio==2.3.0+cu121 --extra-index-url https://download.pytorch.org/whl/cu121
 
 # pip install diffusers==0.30.2 transformers==4.43.3 accelerate==0.34.2
-
 # pip install wheel setuptools ninja
-
 
 # pip uninstall -y xformers
 # pip install xformers==0.0.26.post1 --extra-index-url https://download.pytorch.org/whl/cu121 --no-build-isolation
 # pip install xformers==0.0.28.post1 --extra-index-url https://download.pytorch.org/whl/cu121 --no-build-isolation
-# pip install xformers==0.0.28.post3 --extra-index-url https://download.pytorch.org/whl/cu121 --no-build-isolation
-# pip install https://download.pytorch.org/whl/cu121/xformers-0.0.26.post1-cp311-cp311-win_amd64.whl#sha256=d05c547b4ba603fc8e21fad03a342138eaaece35fe0a1692e6ee0d061ddd21ac
 # pip install -U diffusers==0.30.0 transformers==4.45.0 accelerate==0.33.0 safetensors
-# pip install -U diffusers>=0.31.0 transformers accelerate safetensors
+# pip install -U diffusers==0.31.0 transformers==4.45.0 accelerate==0.34.2
+# pip install git+https://github.com/huggingface/diffusers
 
 # python.exe -m pip install --upgrade pip
 # pip install "numpy<2" --break-system-packages
 
-# pip install -U diffusers==0.31.0 transformers==4.45.0 accelerate==0.34.2
-# pip install git+https://github.com/huggingface/diffusers
-
 # pip install fastapi uvicorn pillow safetensors
-
-
-# Or see: https://pytorch.org/get-started/locally/
-
-# ==== Diffusion Models ====
-# REQUIRED: Install development version from GitHub for QwenImagePipeline support
-# pip install git+https://github.com/huggingface/diffusers
-# diffusers>=0.36.0 (PyPI stable versions don't include QwenImagePipeline yet)
-
-# ==== Qwen Image Generation Dependencies ====
-transformers>=4.57.0  # Required for Qwen2_5_VLForConditionalGeneration
-accelerate>=0.33.0
-safetensors>=0.4.5
-sentencepiece>=0.2.0
-modelscope>=1.15.0
-qwen-vl-utils>=0.0.6
-
-# ==== Image and Tensor Utilities ====
-Pillow>=10.0.0
-numpy>=1.26.0
-
-# ==== Progress and Utility Libraries ====
-tqdm>=4.66.0
-einops>=0.8.0
-
-# ==== Optional Dependencies ====
-# xformers - Memory efficient attention (can reduce VRAM usage by 20-30%)
-# Install separately based on your CUDA version:
-# pip install xformers --index-url https://download.pytorch.org/whl/cu121
-# Or: pip install xformers --index-url https://download.pytorch.org/whl/cu118
-
-# wmi - For GPU info on Windows (optional)
-# pip install wmi

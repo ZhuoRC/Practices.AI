@@ -491,14 +491,12 @@ python qwen_image_edit/qwen_image_edit_api.py
 
 ### Image Storage Locations
 
-All generated and edited images are automatically saved with timestamps to model-specific folders:
+All generated and edited images are automatically saved with timestamps to their respective output folders:
 
-- **Generation (Standard)**: `images/qwen-image/generated_YYYYMMDD_HHMMSS.png`
-- **Generation (Low VRAM)**: `images/qwen-image-low-vram/generated_YYYYMMDD_HHMMSS.png`
-- **Editing (Standard)**: `images/qwen-image-edit/edited_YYYYMMDD_HHMMSS.png`
-- **Editing (Low VRAM)**: `images/qwen-image-edit-low-vram/edited_YYYYMMDD_HHMMSS.png`
+- **Generation**: `qwen_image/output/generated_YYYYMMDD_HHMMSS.png`
+- **Editing**: `qwen_image_edit/output/edited_YYYYMMDD_HHMMSS.png`
 
-This organization makes it easy to track which model version produced each image.
+This organization keeps generated and edited images organized by model type.
 
 ## License
 
