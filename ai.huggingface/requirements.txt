@@ -1,0 +1,177 @@
+# ==============================================================================
+# DeepSeek-OCR Local API Requirements
+# DeepSeek-OCR 本地 API 依赖项
+# Python 3.12.9+ recommended / 推荐 Python 3.12.9+
+# ==============================================================================
+#
+# This project provides DeepSeek-OCR API for optical character recognition
+# 本项目提供 DeepSeek-OCR API，用于光学字符识别（OCR）
+#
+# Port: 8031 (Low VRAM optimized version / 低显存优化版本)
+#
+# ==============================================================================
+# INSTALLATION INSTRUCTIONS / 安装说明
+# ==============================================================================
+#
+# STEP 1: Create and activate virtual environment (RECOMMENDED) / 创建并激活虚拟环境（推荐）
+# ---------------------------------------------------------------
+# Windows:
+#   python -m venv .venv
+#   .venv\Scripts\activate
+#
+# Linux/Mac:
+#   python -m venv .venv
+#   source .venv/bin/activate
+#
+# STEP 2: Install PyTorch with CUDA support (REQUIRED FOR GPU) / 安装支持 CUDA 的 PyTorch（GPU 必需）
+# ------------------------------------------------------------
+# Check your CUDA version first: nvidia-smi
+# 首先检查你的 CUDA 版本：nvidia-smi
+#
+# For CUDA 12.1:
+#   pip install torch==2.5.1+cu121 torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+#
+# For CUDA 11.8:
+#   pip install torch==2.5.1+cu118 torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+#
+# For CPU only (very slow, not recommended for OCR) / 仅 CPU（非常慢，不推荐用于 OCR）:
+#   pip install torch==2.5.1 torchvision torchaudio
+#
+# See: https://pytorch.org/get-started/locally/
+#
+# STEP 3: Install Flash Attention (REQUIRED for DeepSeek-OCR) / 安装 Flash Attention（DeepSeek-OCR 必需）
+# -------------------------------------------------------------------
+# Flash Attention 2 is required for the model to work
+# Flash Attention 2 是模型运行所必需的
+#
+# For CUDA 12.1:
+#   pip install flash-attn==2.7.3 --no-build-isolation
+#
+# For CUDA 11.8:
+#   pip install flash-attn==2.7.3 --no-build-isolation
+#
+# Note: This may take 5-10 minutes to compile
+# 注意：编译可能需要 5-10 分钟
+#
+# STEP 4: Install other dependencies / 安装其他依赖
+# -----------------------------------
+#   pip install -r requirements.txt
+#
+# ==============================================================================
+
+--index-url https://pypi.org/simple
+
+# ==============================================================================
+# Core Web Framework / 核心 Web 框架
+# ==============================================================================
+fastapi>=0.104.0              # Modern web framework with automatic API docs / 现代 Web 框架，自动生成 API 文档
+uvicorn[standard]>=0.24.0     # ASGI server for FastAPI / FastAPI 的 ASGI 服务器
+pydantic>=2.0.0               # Data validation and settings management / 数据验证和设置管理
+python-multipart>=0.0.6       # Required for file uploads / 文件上传所需
+requests>=2.31.0              # HTTP library / HTTP 库
+charset-normalizer>=3.3.0     # Character encoding detection / 字符编码检测
+chardet>=5.2.0                # Alternative character encoding detection / 备用字符编码检测
+
+# ==============================================================================
+# Deep Learning Framework / 深度学习框架
+# ==============================================================================
+# Note: PyTorch (torch, torchvision, torchaudio) must be installed separately
+# with CUDA support as shown in STEP 2 above. Do not install from this file.
+# 注意：PyTorch（torch、torchvision、torchaudio）必须单独安装，
+# 需要 CUDA 支持，如上面的步骤 2 所示。不要从此文件安装。
+
+# ==============================================================================
+# HuggingFace and Model Loading / HuggingFace 和模型加载
+# ==============================================================================
+transformers==4.46.3          # Hugging Face transformers library / HuggingFace 变换器库
+tokenizers==0.20.3            # Fast tokenization library / 快速分词库
+accelerate>=0.33.0            # Hardware acceleration utilities / 硬件加速工具
+safetensors>=0.4.5            # Safe tensor serialization format / 安全张量序列化格式
+
+# ==============================================================================
+# DeepSeek-OCR Specific Dependencies / DeepSeek-OCR 特定依赖
+# ==============================================================================
+# Note: flash-attn must be installed separately (see STEP 3 above)
+# 注意：flash-attn 必须单独安装（见上面的步骤 3）
+# flash-attn==2.7.3 - Install with: pip install flash-attn==2.7.3 --no-build-isolation
+
+einops>=0.8.0                 # Tensor operations and transformations / 张量操作和转换
+addict>=2.4.0                 # Dict-like object with attribute-style access / 支持属性访问的字典对象
+easydict>=1.13                # Dict subclass that allows attribute access / 允许属性访问的字典子类
+
+# ==============================================================================
+# Image Processing and Numerical Computing / 图像处理和数值计算
+# ==============================================================================
+Pillow>=10.0.0                # Python Imaging Library / Python 图像库
+numpy>=1.26.0,<2.0            # Numerical computing library / 数值计算库
+
+# ==============================================================================
+# Utility Libraries / 实用工具库
+# ==============================================================================
+tqdm>=4.66.0                  # Progress bars / 进度条
+
+# ==============================================================================
+# GPU Memory Requirements / GPU 显存需求
+# ==============================================================================
+#
+# DeepSeek-OCR (3B parameters):
+#   - Low VRAM version (deepseek_ocr_api_low_vram.py): 6-10GB VRAM - Port 8031
+#
+# 注意：此版本专为低显存 GPU 优化（6GB+）
+# Note: This version is optimized for low VRAM GPUs (6GB+)
+#
+# Optimization strategies / 优化策略:
+#   - torch.bfloat16 precision / bfloat16 精度
+#   - CPU offload for model components / 模型组件的 CPU 卸载
+#   - Aggressive memory cleanup / 激进的内存清理
+#   - Image size limitation / 图像尺寸限制
+#
+# ==============================================================================
+# Troubleshooting / 故障排除
+# ==============================================================================
+#
+# If you encounter "CUDA out of memory" errors / 如果遇到"CUDA 内存不足"错误：
+#   1. Ensure you are using the low-VRAM version / 确保使用低显存版本
+#   2. Reduce max image size in the API / 在 API 中减小最大图像尺寸
+#   3. Close other GPU applications / 关闭其他 GPU 应用程序
+#   4. See docs/LOW_VRAM_GUIDE.md for detailed guidance / 详细指导见 docs/LOW_VRAM_GUIDE.md
+#
+# If flash-attn installation fails / 如果 flash-attn 安装失败：
+#   1. Ensure you have CUDA 11.8+ installed / 确保已安装 CUDA 11.8+
+#   2. Update your NVIDIA driver to the latest version / 更新 NVIDIA 驱动到最新版本
+#   3. Try installing with --no-build-isolation flag / 尝试使用 --no-build-isolation 标志安装
+#   4. Check that you have sufficient disk space for compilation / 检查是否有足够的磁盘空间进行编译
+#
+# For more information / 更多信息：
+#   - Quick Start: docs/QUICK_START.md
+#   - API Usage: docs/API_USAGE.md
+#   - Low VRAM Guide: docs/LOW_VRAM_GUIDE.md
+#
+# ==============================================================================
+# Complete Installation Example / 完整安装示例
+# ==============================================================================
+#
+# # Create virtual environment / 创建虚拟环境
+# python -m venv .venv
+# .venv\Scripts\activate  # Windows
+# # source .venv/bin/activate  # Linux/Mac
+#
+# # Upgrade pip / 升级 pip
+# python -m pip install --upgrade pip
+#
+# # Install PyTorch with CUDA 12.1 / 安装支持 CUDA 12.1 的 PyTorch
+# pip install torch==2.5.1+cu121 torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+#
+# # Install Flash Attention / 安装 Flash Attention
+# pip install flash-attn==2.7.3 --no-build-isolation
+#
+# # Install other dependencies / 安装其他依赖
+# pip install -r requirements.txt
+#
+# # Verify installation / 验证安装
+# python check_gpu.py
+#
+# # Run the API / 运行 API
+# python deepseek_ocr/deepseek_ocr_api_low_vram.py
+#
+# ==============================================================================

@@ -1,0 +1,80 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environment
+.venv/
+venv/
+ENV/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Model cache (HuggingFace)
+.cache/
+models/
+*.bin
+*.safetensors
+*.msgpack
+
+# Input/Output files
+deepseek_ocr/input/*.png
+deepseek_ocr/input/*.jpg
+deepseek_ocr/input/*.jpeg
+deepseek_ocr/output/*.txt
+deepseek_ocr/output/*.md
+
+# Keep directory structure but ignore contents
+!deepseek_ocr/input/.gitkeep
+!deepseek_ocr/output/.gitkeep
+
+# Logs
+*.log
+logs/
+
+# Environment variables
+.env
+.env.local
+
+# Test files
+test_*.py
+*_test.py
+
+# Jupyter Notebooks
+.ipynb_checkpoints/
+*.ipynb
+
+# PyTorch
+*.pt
+*.pth
+*.ckpt
+
+# Temporary files
+*.tmp
+*.temp
+tmp/
+temp/
