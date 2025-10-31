@@ -20,12 +20,16 @@ export interface Document {
 export interface QueryResponse {
   success: boolean;
   question: string;
+  reformulated_question: string;
   answer: string;
   retrieved_chunks: number;
   time_consumed: number;  // Time in seconds
   total_tokens: number;
   prompt_tokens: number;
   completion_tokens: number;
+  reformulation_tokens: number;
+  reformulation_prompt_tokens: number;
+  reformulation_completion_tokens: number;
   sources?: Array<{
     chunk_index: number;
     text: string;

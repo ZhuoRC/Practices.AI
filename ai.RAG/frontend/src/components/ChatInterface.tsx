@@ -17,6 +17,9 @@ interface Message {
   totalTokens?: number;
   promptTokens?: number;
   completionTokens?: number;
+  reformulationTokens?: number;
+  reformulationPromptTokens?: number;
+  reformulationCompletionTokens?: number;
 }
 
 interface ChatInterfaceProps {
@@ -55,14 +58,15 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ selectedDocIds }) => {
     const retrievalMessageId = (Date.now() + 1).toString();
 
     try {
-      // Step 1: Show retrieval in progress
-      const retrievalMessage: Message = {
-        id: retrievalMessageId,
+      // Step 1: Show query reformulation in progress
+      const reformulationMessageId = retrievalMessageId;
+      const reformulationMessage: Message = {
+        id: reformulationMessageId,
         type: 'assistant',
-        content: '🔍 Searching document chunks...',
+        content: '🔄 Reformulating query...',
         timestamp: new Date(),
       };
-      setMessages((prev) => [...prev, retrievalMessage]);
+      setMessages((prev) => [...prev, reformulationMessage]);
 
       // Make the query (with selected document IDs if any)
       const response = await queryAPI.query(
@@ -71,16 +75,19 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ selectedDocIds }) => {
         selectedDocIds.length > 0 ? selectedDocIds : undefined
       );
 
-      // Step 2: Update to show chunks retrieved (compact display)
-      const chunksFoundMessage: Message = {
-        id: retrievalMessageId,
+      // Step 2: Show reformulated query and retrieval
+      const reformulatedMessage: Message = {
+        id: reformulationMessageId,
         type: 'assistant',
-        content: `📚 Retrieved ${response.retrieved_chunks} chunks`,
+        content: `💡 Reformulated: "${response.reformulated_question}"\n\n📚 Retrieved ${response.retrieved_chunks} chunks`,
         timestamp: new Date(),
         sources: response.sources,
         retrievedChunks: response.retrieved_chunks,
+        reformulationTokens: response.reformulation_tokens,
+        reformulationPromptTokens: response.reformulation_prompt_tokens,
+        reformulationCompletionTokens: response.reformulation_completion_tokens,
       };
-      setMessages((prev) => prev.map(msg => msg.id === retrievalMessageId ? chunksFoundMessage : msg));
+      setMessages((prev) => prev.map(msg => msg.id === reformulationMessageId ? reformulatedMessage : msg));
 
       // Step 3: Show LLM generating
       const llmMessageId = (Date.now() + 2).toString();
@@ -105,6 +112,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ selectedDocIds }) => {
         totalTokens: response.total_tokens,
         promptTokens: response.prompt_tokens,
         completionTokens: response.completion_tokens,
+        reformulationTokens: response.reformulation_tokens,
+        reformulationPromptTokens: response.reformulation_prompt_tokens,
+        reformulationCompletionTokens: response.reformulation_completion_tokens,
       };
       setMessages((prev) => prev.map(msg => msg.id === llmMessageId ? answerMessage : msg));
 
@@ -243,17 +253,32 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ selectedDocIds }) => {
                       />
                     )}
 
-                    {message.type === 'assistant' && (message.timeConsumed !== undefined || message.totalTokens !== undefined) && (
-                      <div style={{ marginTop: 12, fontSize: 12, color: '#666' }}>
+                    {message.type === 'assistant' && (message.timeConsumed !== undefined || message.totalTokens !== undefined || message.reformulationTokens !== undefined) && (
+                      <div style={{ marginTop: 12, fontSize: 12, color: '#666', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                         {message.timeConsumed !== undefined && (
-                          <Tag color="blue" style={{ marginRight: 8 }}>
+                          <Tag color="blue">
                             Time: {message.timeConsumed}s
                           </Tag>
                         )}
-                        {message.totalTokens !== undefined && message.totalTokens > 0 && (
-                          <Tag color="purple">
-                            Tokens: {message.totalTokens} (Prompt: {message.promptTokens} / Completion: {message.completionTokens})
-                          </Tag>
+                        {(message.reformulationTokens !== undefined || message.totalTokens !== undefined) && (
+                          <>
+                            <Tag color="purple">
+                              Tokens: {((message.reformulationTokens || 0) + (message.totalTokens || 0))}
+                            </Tag>
+                            <span style={{ color: '#999' }}>
+                              (
+                                {message.reformulationTokens !== undefined && message.reformulationTokens > 0 && (
+                                  <>Reformulation: {message.reformulationTokens}</>
+                                )}
+                                {message.totalTokens !== undefined && message.totalTokens > 0 && (
+                                  <>
+                                    {message.reformulationTokens !== undefined && message.reformulationTokens > 0 && ', '}
+                                    Prompt: {message.promptTokens}, Completion: {message.completionTokens}
+                                  </>
+                                )}
+                              )
+                            </span>
+                          </>
                         )}
                       </div>
                     )}
