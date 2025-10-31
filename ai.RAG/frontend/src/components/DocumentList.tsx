@@ -1,13 +1,19 @@
 import React, { useEffect, useState } from 'react';
-import { Card, Table, Button, Popconfirm, message, Tag } from 'antd';
+import { Card, Table, Button, Popconfirm, message, Tag, Checkbox } from 'antd';
 import { DeleteOutlined, ReloadOutlined, FileTextOutlined } from '@ant-design/icons';
 import { documentAPI, Document } from '../services/api';
 
 interface DocumentListProps {
   refreshTrigger: number;
+  selectedDocIds: string[];
+  onSelectionChange: (docIds: string[]) => void;
 }
 
-const DocumentList: React.FC<DocumentListProps> = ({ refreshTrigger }) => {
+const DocumentList: React.FC<DocumentListProps> = ({
+  refreshTrigger,
+  selectedDocIds,
+  onSelectionChange
+}) => {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -45,47 +51,30 @@ const DocumentList: React.FC<DocumentListProps> = ({ refreshTrigger }) => {
     return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
   };
 
-  const formatDate = (timestamp: number): string => {
-    return new Date(timestamp * 1000).toLocaleString('en-US');
+  const handleSelectChange = (docId: string, checked: boolean) => {
+    if (checked) {
+      onSelectionChange([...selectedDocIds, docId]);
+    } else {
+      onSelectionChange(selectedDocIds.filter(id => id !== docId));
+    }
   };
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      onSelectionChange(documents.map(doc => doc.document_id));
+    } else {
+      onSelectionChange([]);
+    }
+  };
+
+  const isAllSelected = documents.length > 0 && selectedDocIds.length === documents.length;
+  const isIndeterminate = selectedDocIds.length > 0 && selectedDocIds.length < documents.length;
 
   const columns = [
     {
-      title: 'Filename',
-      dataIndex: 'filename',
-      key: 'filename',
-      render: (text: string) => (
-        <span>
-          <FileTextOutlined style={{ marginRight: 8, color: '#1890ff' }} />
-          {text}
-        </span>
-      ),
-    },
-    {
-      title: 'File Size',
-      dataIndex: 'file_size',
-      key: 'file_size',
-      render: (size: number) => formatFileSize(size),
-      width: 120,
-    },
-    {
-      title: 'Chunks',
-      dataIndex: 'total_chunks',
-      key: 'total_chunks',
-      render: (chunks: number) => <Tag color="blue">{chunks} chunks</Tag>,
-      width: 120,
-    },
-    {
-      title: 'Upload Time',
-      dataIndex: 'modified_time',
-      key: 'modified_time',
-      render: (time: number) => formatDate(time),
-      width: 180,
-    },
-    {
       title: 'Action',
       key: 'action',
-      width: 100,
+      width: 70,
       render: (_: any, record: Document) => (
         <Popconfirm
           title="Are you sure you want to delete this document?"
@@ -93,10 +82,58 @@ const DocumentList: React.FC<DocumentListProps> = ({ refreshTrigger }) => {
           okText="Yes"
           cancelText="No"
         >
-          <Button type="link" danger icon={<DeleteOutlined />}>
-            Delete
-          </Button>
+          <Button type="link" danger icon={<DeleteOutlined />} size="small" />
         </Popconfirm>
+      ),
+    },
+    {
+      title: 'Filename',
+      dataIndex: 'filename',
+      key: 'filename',
+      render: (text: string) => (
+        <span>
+          <FileTextOutlined style={{ marginRight: 6, color: '#1890ff', fontSize: 13 }} />
+          <span style={{ fontSize: 13 }}>{text}</span>
+        </span>
+      ),
+    },
+    {
+      title: 'File Size',
+      dataIndex: 'file_size',
+      key: 'file_size',
+      render: (size: number) => <span style={{ fontSize: 13 }}>{formatFileSize(size)}</span>,
+      width: 90,
+    },
+    {
+      title: 'Chunks',
+      dataIndex: 'total_chunks',
+      key: 'total_chunks',
+      render: (chunks: number) => <Tag color="blue" style={{ fontSize: 11, margin: 0 }}>{chunks}</Tag>,
+      width: 70,
+    },
+    {
+      title: 'Upload Time',
+      dataIndex: 'upload_time',
+      key: 'upload_time',
+      render: (time: string) => <span style={{ fontSize: 13 }}>{time}</span>,
+      width: 110,
+    },
+    {
+      title: () => (
+        <Checkbox
+          checked={isAllSelected}
+          indeterminate={isIndeterminate}
+          onChange={(e) => handleSelectAll(e.target.checked)}
+        />
+      ),
+      key: 'select',
+      width: 50,
+      fixed: 'right',
+      render: (_: any, record: Document) => (
+        <Checkbox
+          checked={selectedDocIds.includes(record.document_id)}
+          onChange={(e) => handleSelectChange(record.document_id, e.target.checked)}
+        />
       ),
     },
   ];
@@ -119,9 +156,17 @@ const DocumentList: React.FC<DocumentListProps> = ({ refreshTrigger }) => {
         dataSource={documents}
         rowKey="document_id"
         loading={loading}
+        size="small"
         pagination={{
           pageSize: 10,
-          showTotal: (total) => `Total ${total} documents`,
+          size: 'small',
+          showTotal: (total) => {
+            const selectedCount = selectedDocIds.length;
+            if (selectedCount > 0) {
+              return `Total ${total} documents (${selectedCount} selected for query)`;
+            }
+            return `Total ${total} documents (querying all)`;
+          },
         }}
       />
     </Card>

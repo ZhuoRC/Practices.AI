@@ -13,9 +13,17 @@ interface Message {
   timestamp: Date;
   sources?: QueryResponse['sources'];
   retrievedChunks?: number;
+  timeConsumed?: number;
+  totalTokens?: number;
+  promptTokens?: number;
+  completionTokens?: number;
 }
 
-const ChatInterface: React.FC = () => {
+interface ChatInterfaceProps {
+  selectedDocIds: string[];
+}
+
+const ChatInterface: React.FC<ChatInterfaceProps> = ({ selectedDocIds }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -43,19 +51,63 @@ const ChatInterface: React.FC = () => {
     setInput('');
     setLoading(true);
 
-    try {
-      const response = await queryAPI.query(input, true);
+    // Create a temporary message ID for updates
+    const retrievalMessageId = (Date.now() + 1).toString();
 
-      const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
+    try {
+      // Step 1: Show retrieval in progress
+      const retrievalMessage: Message = {
+        id: retrievalMessageId,
         type: 'assistant',
-        content: response.answer,
+        content: '🔍 Searching document chunks...',
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, retrievalMessage]);
+
+      // Make the query (with selected document IDs if any)
+      const response = await queryAPI.query(
+        input,
+        true,
+        selectedDocIds.length > 0 ? selectedDocIds : undefined
+      );
+
+      // Step 2: Update to show chunks retrieved (compact display)
+      const chunksFoundMessage: Message = {
+        id: retrievalMessageId,
+        type: 'assistant',
+        content: `📚 Retrieved ${response.retrieved_chunks} chunks`,
         timestamp: new Date(),
         sources: response.sources,
         retrievedChunks: response.retrieved_chunks,
       };
+      setMessages((prev) => prev.map(msg => msg.id === retrievalMessageId ? chunksFoundMessage : msg));
 
-      setMessages((prev) => [...prev, assistantMessage]);
+      // Step 3: Show LLM generating
+      const llmMessageId = (Date.now() + 2).toString();
+      const llmGeneratingMessage: Message = {
+        id: llmMessageId,
+        type: 'assistant',
+        content: '💭 Generating answer with LLM...',
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, llmGeneratingMessage]);
+
+      // Small delay for visual effect
+      await new Promise(resolve => setTimeout(resolve, 300));
+
+      // Step 4: Show final answer
+      const answerMessage: Message = {
+        id: llmMessageId,
+        type: 'assistant',
+        content: response.answer,
+        timestamp: new Date(),
+        timeConsumed: response.time_consumed,
+        totalTokens: response.total_tokens,
+        promptTokens: response.prompt_tokens,
+        completionTokens: response.completion_tokens,
+      };
+      setMessages((prev) => prev.map(msg => msg.id === llmMessageId ? answerMessage : msg));
+
     } catch (error: any) {
       console.error('Query error:', error);
       const errorMessage: Message = {
@@ -79,7 +131,21 @@ const ChatInterface: React.FC = () => {
 
   return (
     <Card
-      title="Intelligent Q&A"
+      title={
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <span>Intelligent Q&A</span>
+          {selectedDocIds.length > 0 && (
+            <Tag color="blue" style={{ marginLeft: 8 }}>
+              Querying {selectedDocIds.length} selected document{selectedDocIds.length > 1 ? 's' : ''}
+            </Tag>
+          )}
+          {selectedDocIds.length === 0 && (
+            <Tag color="default" style={{ marginLeft: 8 }}>
+              Querying all documents
+            </Tag>
+          )}
+        </div>
+      }
       style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
       bodyStyle={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}
     >
@@ -135,16 +201,15 @@ const ChatInterface: React.FC = () => {
                     {message.type === 'assistant' && message.sources && message.sources.length > 0 && (
                       <Collapse
                         ghost
-                        style={{ marginTop: 12 }}
+                        size="small"
+                        style={{ marginTop: 8 }}
                         items={[
                           {
                             key: '1',
                             label: (
-                              <Space>
-                                <FileTextOutlined />
-                                <span>
-                                  References ({message.retrievedChunks} chunks)
-                                </span>
+                              <Space size="small">
+                                <FileTextOutlined style={{ fontSize: 12 }} />
+                                <span style={{ fontSize: 12 }}>View Sources</span>
                               </Space>
                             ),
                             children: (
@@ -153,20 +218,20 @@ const ChatInterface: React.FC = () => {
                                   <div
                                     key={idx}
                                     style={{
-                                      marginBottom: 8,
-                                      padding: 8,
-                                      backgroundColor: '#fff',
+                                      marginBottom: 6,
+                                      padding: 6,
+                                      backgroundColor: '#fafafa',
                                       borderRadius: 4,
-                                      border: '1px solid #d9d9d9',
+                                      borderLeft: '3px solid #1890ff',
                                     }}
                                   >
-                                    <div style={{ marginBottom: 4 }}>
-                                      <Tag color="blue">Chunk {idx + 1}</Tag>
-                                      <Tag color="green">
-                                        Similarity: {(source.similarity_score * 100).toFixed(1)}%
+                                    <div style={{ marginBottom: 4, display: 'flex', gap: 6 }}>
+                                      <Tag color="blue" style={{ margin: 0, fontSize: 11 }}>#{idx + 1}</Tag>
+                                      <Tag color="green" style={{ margin: 0, fontSize: 11 }}>
+                                        {(source.similarity_score * 100).toFixed(0)}%
                                       </Tag>
                                     </div>
-                                    <div style={{ fontSize: 12, color: '#666' }}>
+                                    <div style={{ fontSize: 12, color: '#666', lineHeight: 1.5 }}>
                                       {source.text}
                                     </div>
                                   </div>
@@ -178,9 +243,20 @@ const ChatInterface: React.FC = () => {
                       />
                     )}
 
-                    <div style={{ fontSize: 12, color: '#999', marginTop: 8 }}>
-                      {message.timestamp.toLocaleTimeString('en-US')}
-                    </div>
+                    {message.type === 'assistant' && (message.timeConsumed !== undefined || message.totalTokens !== undefined) && (
+                      <div style={{ marginTop: 12, fontSize: 12, color: '#666' }}>
+                        {message.timeConsumed !== undefined && (
+                          <Tag color="blue" style={{ marginRight: 8 }}>
+                            Time: {message.timeConsumed}s
+                          </Tag>
+                        )}
+                        {message.totalTokens !== undefined && message.totalTokens > 0 && (
+                          <Tag color="purple">
+                            Tokens: {message.totalTokens} (Prompt: {message.promptTokens} / Completion: {message.completionTokens})
+                          </Tag>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </Space>
               </List.Item>

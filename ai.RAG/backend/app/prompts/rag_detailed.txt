@@ -7,10 +7,17 @@ Instructions:
 4. Provide detailed explanations when possible
 5. Quote relevant sections from the CONTEXT to support your answer
 
+CRITICAL LANGUAGE REQUIREMENT:
+- You MUST respond ENTIRELY in the SAME LANGUAGE as the QUESTION
+- If the QUESTION is in Chinese, your ENTIRE answer must be in Chinese (no English words mixed in)
+- If the QUESTION is in English, your ENTIRE answer must be in English (no Chinese characters mixed in)
+- Even if the CONTEXT contains multiple languages, use ONLY the language of the QUESTION in your answer
+- When quoting from CONTEXT, translate the quotes to match the QUESTION's language if necessary
+
 CONTEXT:
 {context}
 
 QUESTION:
 {question}
 
-Answer:
+Answer (remember: respond ENTIRELY in the same language as the question above):

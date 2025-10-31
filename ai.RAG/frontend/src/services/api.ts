@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:8001';
+export const API_BASE_URL = 'http://localhost:8001';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -13,7 +13,7 @@ export interface Document {
   document_id: string;
   filename: string;
   file_size: number;
-  modified_time: number;
+  upload_time: string;  // Format: yyyy-mm-dd
   total_chunks: number;
 }
 
@@ -22,6 +22,10 @@ export interface QueryResponse {
   question: string;
   answer: string;
   retrieved_chunks: number;
+  time_consumed: number;  // Time in seconds
+  total_tokens: number;
+  prompt_tokens: number;
+  completion_tokens: number;
   sources?: Array<{
     chunk_index: number;
     text: string;
@@ -68,10 +72,15 @@ export const documentAPI = {
 
 export const queryAPI = {
   // Query RAG system
-  query: async (question: string, includeSources: boolean = true): Promise<QueryResponse> => {
+  query: async (
+    question: string,
+    includeSources: boolean = true,
+    documentIds?: string[]
+  ): Promise<QueryResponse> => {
     const response = await api.post('/api/query', {
       question,
       include_sources: includeSources,
+      document_ids: documentIds && documentIds.length > 0 ? documentIds : undefined,
     });
 
     return response.data;

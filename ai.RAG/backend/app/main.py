@@ -10,8 +10,45 @@ from .config import settings
 # Create FastAPI app
 app = FastAPI(
     title="RAG System API",
-    description="RESTful API for RAG (Retrieval-Augmented Generation) system",
-    version="1.0.0"
+    description="""
+## RAG (Retrieval-Augmented Generation) System API
+
+This API provides endpoints for:
+* **Document Management**: Upload, list, retrieve, and delete PDF documents
+* **Query Processing**: Ask questions and get answers based on uploaded documents
+* **System Health**: Monitor system status and components
+
+### Features
+- PDF document upload and processing
+- Automatic text chunking and embedding generation
+- Vector similarity search for relevant context retrieval
+- Question answering using LLM (Local Ollama or Cloud API)
+- Document management with cleanup utilities
+
+### Getting Started
+1. Upload PDF documents using `/api/documents/upload`
+2. Query the system using `/api/query` with your questions
+3. Check system health at `/api/health`
+    """,
+    version="1.0.0",
+    contact={
+        "name": "RAG System",
+        "url": "https://github.com/yourusername/rag-system",
+    },
+    license_info={
+        "name": "MIT License",
+        "url": "https://opensource.org/licenses/MIT",
+    },
+    openapi_tags=[
+        {
+            "name": "documents",
+            "description": "Operations for managing PDF documents. Upload, list, retrieve, delete documents and manage vector embeddings.",
+        },
+        {
+            "name": "query",
+            "description": "RAG query operations. Ask questions and get answers based on the knowledge base of uploaded documents.",
+        },
+    ],
 )
 
 # Configure CORS
