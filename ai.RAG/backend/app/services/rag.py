@@ -41,6 +41,10 @@ class RAGService:
         self.prompt_template = self._load_prompt_template()
         print(f"Prompt template loaded successfully")
 
+        # Load query reformulation template
+        self.reformulation_template = self._load_query_reformulation_template()
+        print(f"Query reformulation template loaded successfully")
+
     async def query(
         self,
         question: str,
@@ -64,12 +68,19 @@ class RAGService:
             # Start timing
             start_time = time.time()
 
-            # Step 1: Generate embedding for the question (run in thread pool to avoid blocking)
-            print(f"Generating embedding for question: {question[:50]}...")
-            question_embedding = await asyncio.to_thread(embedding_service.embed_text, question)
+            # Step 1: Query Reformulation - rewrite question for better retrieval
+            print(f"Reformulating query: {question[:50]}...")
+            reformulated_question, reformulation_tokens = await self._reformulate_query(question)
+            print(f"Reformulated question: {reformulated_question[:50]}...")
+            if reformulation_tokens:
+                print(f"Reformulation tokens: {reformulation_tokens.get('total_tokens', 0)}")
+
+            # Step 2: Generate embedding for the reformulated question (run in thread pool to avoid blocking)
+            print(f"Generating embedding for reformulated question...")
+            question_embedding = await asyncio.to_thread(embedding_service.embed_text, reformulated_question)
             print(f"Embedding generated successfully. Dimension: {len(question_embedding)}")
 
-            # Step 2: Search for relevant chunks
+            # Step 3: Search for relevant chunks
             if document_ids:
                 print(f"Searching vector store for top {top_k or settings.top_k} chunks in documents: {document_ids}")
             else:
@@ -81,7 +92,7 @@ class RAGService:
             )
             print(f"Found {len(search_results['documents'])} chunks")
 
-            # Step 3: Prepare context from retrieved chunks
+            # Step 4: Prepare context from retrieved chunks
             context_chunks = search_results["documents"]
 
             if not context_chunks:
@@ -93,17 +104,21 @@ class RAGService:
                     "time_consumed": round(end_time - start_time, 2),
                     "total_tokens": 0,
                     "prompt_tokens": 0,
-                    "completion_tokens": 0
+                    "completion_tokens": 0,
+                    "reformulated_question": reformulated_question,
+                    "reformulation_tokens": reformulation_tokens.get("total_tokens", 0),
+                    "reformulation_prompt_tokens": reformulation_tokens.get("prompt_tokens", 0),
+                    "reformulation_completion_tokens": reformulation_tokens.get("completion_tokens", 0)
                 }
 
             # Combine chunks into context
             context = "\n\n".join([f"[Document Chunk {i+1}]\n{chunk}" for i, chunk in enumerate(context_chunks)])
             print(f"Context prepared. Total length: {len(context)} characters")
 
-            # Step 4: Build prompt for Qwen
+            # Step 5: Build prompt for Qwen (use original question, not reformulated)
             prompt = self._build_prompt(question, context)
 
-            # Step 5: Call LLM API to generate answer
+            # Step 6: Call LLM API to generate answer
             print(f"Calling {self.provider} API at {self.api_url}...")
             llm_result = await self._call_llm_api(prompt)
             answer = llm_result["content"]
@@ -114,14 +129,18 @@ class RAGService:
             end_time = time.time()
             time_consumed = round(end_time - start_time, 2)
 
-            # Step 6: Prepare response
+            # Step 7: Prepare response
             response = {
                 "answer": answer,
                 "retrieved_chunks": len(context_chunks),
                 "time_consumed": time_consumed,
                 "total_tokens": token_usage.get("total_tokens", 0),
                 "prompt_tokens": token_usage.get("prompt_tokens", 0),
-                "completion_tokens": token_usage.get("completion_tokens", 0)
+                "completion_tokens": token_usage.get("completion_tokens", 0),
+                "reformulated_question": reformulated_question,
+                "reformulation_tokens": reformulation_tokens.get("total_tokens", 0),
+                "reformulation_prompt_tokens": reformulation_tokens.get("prompt_tokens", 0),
+                "reformulation_completion_tokens": reformulation_tokens.get("completion_tokens", 0)
             }
 
             if include_sources:
@@ -185,6 +204,73 @@ QUESTION:
         except Exception as e:
             print(f"Error loading prompt template: {e}. Using default template")
             return default_template
+
+    def _load_query_reformulation_template(self) -> str:
+        """
+        Load query reformulation template from file
+
+        Returns:
+            Query reformulation template string with {question} placeholder
+        """
+        # Default template as fallback
+        default_template = """你是一个专业的查询优化助手。
+将用户的问题改写为更适合文档检索的形式。
+保持问题的核心意图，使用更明确的关键词。
+只输出改写后的问题，不要添加任何解释。
+
+原始问题：{question}
+
+改写后的问题："""
+
+        try:
+            # Get the prompts directory path
+            current_file = Path(__file__)
+            prompts_dir = current_file.parent.parent / "prompts"
+            template_file = prompts_dir / "query_reformulation.txt"
+
+            # Load template from file
+            if template_file.exists():
+                with open(template_file, 'r', encoding='utf-8') as f:
+                    template = f.read()
+                print(f"Loaded query reformulation template from: {template_file}")
+                return template
+            else:
+                print(f"Query reformulation template not found at {template_file}, using default")
+                return default_template
+
+        except Exception as e:
+            print(f"Error loading query reformulation template: {e}. Using default")
+            return default_template
+
+    async def _reformulate_query(self, question: str) -> tuple:
+        """
+        Reformulate user's question for better retrieval
+
+        Args:
+            question: Original user question
+
+        Returns:
+            Tuple of (reformulated_question, token_usage_dict)
+        """
+        try:
+            # Build reformulation prompt
+            prompt = self.reformulation_template.format(question=question)
+
+            # Call LLM to reformulate
+            llm_result = await self._call_llm_api(prompt)
+            reformulated = llm_result["content"].strip()
+            token_usage = llm_result.get("usage", {})
+
+            # If reformulation failed or is empty, use original question
+            if not reformulated or len(reformulated) < 3:
+                print("Query reformulation failed or returned empty, using original question")
+                return question, {}
+
+            return reformulated, token_usage
+
+        except Exception as e:
+            print(f"Error in query reformulation: {str(e)}. Using original question")
+            return question, {}
 
     def _build_prompt(self, question: str, context: str) -> str:
         """

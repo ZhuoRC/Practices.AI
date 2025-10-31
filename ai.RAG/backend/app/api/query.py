@@ -36,12 +36,16 @@ class QueryResponse(BaseModel):
     """Response model for RAG query"""
     success: bool = Field(True, description="Whether the query was successful")
     question: str = Field(..., description="The original question")
+    reformulated_question: str = Field(..., description="The reformulated question used for retrieval")
     answer: str = Field(..., description="Generated answer based on the documents")
     retrieved_chunks: int = Field(..., description="Number of chunks retrieved")
     time_consumed: float = Field(..., description="Time consumed in seconds")
-    total_tokens: int = Field(..., description="Total tokens used")
-    prompt_tokens: int = Field(..., description="Prompt tokens used")
-    completion_tokens: int = Field(..., description="Completion tokens used")
+    total_tokens: int = Field(..., description="Total tokens used for answer generation")
+    prompt_tokens: int = Field(..., description="Prompt tokens used for answer generation")
+    completion_tokens: int = Field(..., description="Completion tokens used for answer generation")
+    reformulation_tokens: int = Field(..., description="Total tokens used for query reformulation")
+    reformulation_prompt_tokens: int = Field(..., description="Prompt tokens used for query reformulation")
+    reformulation_completion_tokens: int = Field(..., description="Completion tokens used for query reformulation")
     sources: Optional[List[SourceChunk]] = Field(None, description="Source chunks used to generate the answer")
 
     class Config:
@@ -49,12 +53,16 @@ class QueryResponse(BaseModel):
             "example": {
                 "success": True,
                 "question": "What are the main features?",
+                "reformulated_question": "What are the key features and characteristics of this product?",
                 "answer": "Based on the documents, the main features include...",
                 "retrieved_chunks": 3,
                 "time_consumed": 1.25,
                 "total_tokens": 450,
                 "prompt_tokens": 350,
                 "completion_tokens": 100,
+                "reformulation_tokens": 50,
+                "reformulation_prompt_tokens": 30,
+                "reformulation_completion_tokens": 20,
                 "sources": [
                     {
                         "chunk_index": 0,
