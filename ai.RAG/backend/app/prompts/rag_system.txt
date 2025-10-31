@@ -3,8 +3,17 @@ Use only the CONTEXT below to answer.
 If you don't find the answer, say exactly:
 "I don't have enough information to answer that question."
 
+CRITICAL LANGUAGE REQUIREMENT:
+- You MUST respond ENTIRELY in the SAME LANGUAGE as the QUESTION
+- If the QUESTION is in Chinese, your ENTIRE answer must be in Chinese (no English words)
+- If the QUESTION is in English, your ENTIRE answer must be in English (no Chinese)
+- Even if CONTEXT has mixed languages, use ONLY the QUESTION's language
+- Translate quotes from CONTEXT to match the QUESTION's language
+
 CONTEXT:
 {context}
 
 QUESTION:
 {question}
+
+Answer in the SAME language as the question:

@@ -56,7 +56,8 @@ class VectorStore:
     def search(
         self,
         query_embedding: List[float],
-        top_k: int = None
+        top_k: int = None,
+        document_ids: Optional[List[str]] = None
     ) -> Dict:
         """
         Search for similar documents
@@ -64,6 +65,7 @@ class VectorStore:
         Args:
             query_embedding: Query embedding vector
             top_k: Number of results to return
+            document_ids: Optional list of document IDs to filter results
 
         Returns:
             Search results with documents, distances, and metadata
@@ -71,9 +73,19 @@ class VectorStore:
         if top_k is None:
             top_k = settings.top_k
 
+        # Build where clause for filtering by document_ids
+        where_clause = None
+        if document_ids:
+            if len(document_ids) == 1:
+                where_clause = {"document_id": document_ids[0]}
+            else:
+                where_clause = {"document_id": {"$in": document_ids}}
+            print(f"Filtering search by document_ids: {document_ids}")
+
         results = self.collection.query(
             query_embeddings=[query_embedding],
-            n_results=top_k
+            n_results=top_k,
+            where=where_clause
         )
 
         return {

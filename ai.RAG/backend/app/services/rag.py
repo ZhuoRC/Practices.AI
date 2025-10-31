@@ -1,6 +1,8 @@
 from typing import List, Dict, Optional
 from pathlib import Path
+import time
 import httpx
+import asyncio
 from .embeddings import embedding_service
 from .vector_store import vector_store
 from ..config import settings
@@ -43,7 +45,8 @@ class RAGService:
         self,
         question: str,
         top_k: Optional[int] = None,
-        include_sources: bool = True
+        include_sources: bool = True,
+        document_ids: Optional[List[str]] = None
     ) -> Dict:
         """
         Execute RAG query: retrieve relevant chunks and generate answer
@@ -52,21 +55,29 @@ class RAGService:
             question: User's question
             top_k: Number of chunks to retrieve (default from settings)
             include_sources: Whether to include source chunks in response
+            document_ids: Optional list of document IDs to filter search results
 
         Returns:
-            Dict with answer and optional source chunks
+            Dict with answer, optional source chunks, time consumption, and token usage
         """
         try:
-            # Step 1: Generate embedding for the question
+            # Start timing
+            start_time = time.time()
+
+            # Step 1: Generate embedding for the question (run in thread pool to avoid blocking)
             print(f"Generating embedding for question: {question[:50]}...")
-            question_embedding = embedding_service.embed_text(question)
+            question_embedding = await asyncio.to_thread(embedding_service.embed_text, question)
             print(f"Embedding generated successfully. Dimension: {len(question_embedding)}")
 
             # Step 2: Search for relevant chunks
-            print(f"Searching vector store for top {top_k or settings.top_k} chunks...")
+            if document_ids:
+                print(f"Searching vector store for top {top_k or settings.top_k} chunks in documents: {document_ids}")
+            else:
+                print(f"Searching vector store for top {top_k or settings.top_k} chunks (all documents)...")
             search_results = vector_store.search(
                 query_embedding=question_embedding,
-                top_k=top_k
+                top_k=top_k,
+                document_ids=document_ids
             )
             print(f"Found {len(search_results['documents'])} chunks")
 
@@ -74,10 +85,15 @@ class RAGService:
             context_chunks = search_results["documents"]
 
             if not context_chunks:
+                end_time = time.time()
                 return {
                     "answer": "I don't have enough information to answer that question.",
                     "sources": [],
-                    "retrieved_chunks": 0
+                    "retrieved_chunks": 0,
+                    "time_consumed": round(end_time - start_time, 2),
+                    "total_tokens": 0,
+                    "prompt_tokens": 0,
+                    "completion_tokens": 0
                 }
 
             # Combine chunks into context
@@ -89,13 +105,23 @@ class RAGService:
 
             # Step 5: Call LLM API to generate answer
             print(f"Calling {self.provider} API at {self.api_url}...")
-            answer = await self._call_llm_api(prompt)
+            llm_result = await self._call_llm_api(prompt)
+            answer = llm_result["content"]
+            token_usage = llm_result.get("usage", {})
             print(f"Answer generated successfully. Length: {len(answer)} characters")
+
+            # Calculate time consumed
+            end_time = time.time()
+            time_consumed = round(end_time - start_time, 2)
 
             # Step 6: Prepare response
             response = {
                 "answer": answer,
-                "retrieved_chunks": len(context_chunks)
+                "retrieved_chunks": len(context_chunks),
+                "time_consumed": time_consumed,
+                "total_tokens": token_usage.get("total_tokens", 0),
+                "prompt_tokens": token_usage.get("prompt_tokens", 0),
+                "completion_tokens": token_usage.get("completion_tokens", 0)
             }
 
             if include_sources:
@@ -175,7 +201,7 @@ QUESTION:
         prompt = self.prompt_template.format(context=context, question=question)
         return prompt
 
-    async def _call_llm_api(self, prompt: str) -> str:
+    async def _call_llm_api(self, prompt: str) -> Dict:
         """
         Call LLM API to generate response (supports both local and cloud)
 
@@ -183,7 +209,7 @@ QUESTION:
             prompt: Prompt to send to LLM
 
         Returns:
-            Generated response text
+            Dict with content and usage information
         """
         if self.provider == "local":
             return await self._call_ollama_api(prompt)
@@ -192,7 +218,7 @@ QUESTION:
         else:
             raise Exception(f"Unknown provider: {self.provider}")
 
-    async def _call_ollama_api(self, prompt: str) -> str:
+    async def _call_ollama_api(self, prompt: str) -> Dict:
         """
         Call Ollama API to generate response
 
@@ -200,7 +226,7 @@ QUESTION:
             prompt: Prompt to send to Ollama
 
         Returns:
-            Generated response text
+            Dict with content and usage information
         """
         try:
             async with httpx.AsyncClient(timeout=120.0) as client:
@@ -240,7 +266,20 @@ QUESTION:
                 # Extract answer from Ollama response
                 if "message" in result and "content" in result["message"]:
                     answer = result["message"]["content"]
-                    return answer.strip()
+
+                    # Extract token usage if available
+                    usage = {}
+                    if "prompt_eval_count" in result:
+                        usage["prompt_tokens"] = result["prompt_eval_count"]
+                    if "eval_count" in result:
+                        usage["completion_tokens"] = result["eval_count"]
+                    if usage:
+                        usage["total_tokens"] = usage.get("prompt_tokens", 0) + usage.get("completion_tokens", 0)
+
+                    return {
+                        "content": answer.strip(),
+                        "usage": usage
+                    }
                 else:
                     print(f"Unexpected response format: {result}")
                     raise Exception("Unexpected response format from Ollama API")
@@ -266,7 +305,7 @@ QUESTION:
             print(error_msg)
             raise Exception(error_msg)
 
-    async def _call_dashscope_api(self, prompt: str) -> str:
+    async def _call_dashscope_api(self, prompt: str) -> Dict:
         """
         Call DashScope API to generate response
 
@@ -274,7 +313,7 @@ QUESTION:
             prompt: Prompt to send to DashScope
 
         Returns:
-            Generated response text
+            Dict with content and usage information
         """
         try:
             async with httpx.AsyncClient(timeout=60.0) as client:
@@ -315,7 +354,18 @@ QUESTION:
                 # Extract answer from response
                 if "choices" in result and len(result["choices"]) > 0:
                     answer = result["choices"][0]["message"]["content"]
-                    return answer.strip()
+
+                    # Extract token usage
+                    usage = {}
+                    if "usage" in result:
+                        usage["prompt_tokens"] = result["usage"].get("prompt_tokens", 0)
+                        usage["completion_tokens"] = result["usage"].get("completion_tokens", 0)
+                        usage["total_tokens"] = result["usage"].get("total_tokens", 0)
+
+                    return {
+                        "content": answer.strip(),
+                        "usage": usage
+                    }
                 else:
                     print(f"Unexpected response format: {result}")
                     raise Exception("Unexpected response format from DashScope API")
