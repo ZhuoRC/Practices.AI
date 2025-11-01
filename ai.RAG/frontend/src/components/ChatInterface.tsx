@@ -1,10 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Card, Input, Button, List, Avatar, Space, Collapse, Tag, Spin, Empty } from 'antd';
-import { SendOutlined, UserOutlined, RobotOutlined, FileTextOutlined } from '@ant-design/icons';
+import { Card, Input, Button, List, Avatar, Space, Collapse, Spin, Empty } from 'antd';
+import { SendOutlined, UserOutlined, RobotOutlined } from '@ant-design/icons';
 import { queryAPI, QueryResponse } from '../services/api';
 
 const { TextArea } = Input;
-const { Panel } = Collapse;
 
 interface Message {
   id: string;
@@ -58,15 +57,15 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ selectedDocIds }) => {
     const retrievalMessageId = (Date.now() + 1).toString();
 
     try {
-      // Step 1: Show query reformulation in progress
-      const reformulationMessageId = retrievalMessageId;
-      const reformulationMessage: Message = {
-        id: reformulationMessageId,
+      // Show processing message
+      const processingMessageId = retrievalMessageId;
+      const processingMessage: Message = {
+        id: processingMessageId,
         type: 'assistant',
-        content: '🔄 Reformulating query...',
+        content: '💭 Processing...',
         timestamp: new Date(),
       };
-      setMessages((prev) => [...prev, reformulationMessage]);
+      setMessages((prev) => [...prev, processingMessage]);
 
       // Make the query (with selected document IDs if any)
       const response = await queryAPI.query(
@@ -75,39 +74,14 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ selectedDocIds }) => {
         selectedDocIds.length > 0 ? selectedDocIds : undefined
       );
 
-      // Step 2: Show reformulated query and retrieval
-      const reformulatedMessage: Message = {
-        id: reformulationMessageId,
-        type: 'assistant',
-        content: `💡 Reformulated: "${response.reformulated_question}"\n\n📚 Retrieved ${response.retrieved_chunks} chunks`,
-        timestamp: new Date(),
-        sources: response.sources,
-        retrievedChunks: response.retrieved_chunks,
-        reformulationTokens: response.reformulation_tokens,
-        reformulationPromptTokens: response.reformulation_prompt_tokens,
-        reformulationCompletionTokens: response.reformulation_completion_tokens,
-      };
-      setMessages((prev) => prev.map(msg => msg.id === reformulationMessageId ? reformulatedMessage : msg));
-
-      // Step 3: Show LLM generating
-      const llmMessageId = (Date.now() + 2).toString();
-      const llmGeneratingMessage: Message = {
-        id: llmMessageId,
-        type: 'assistant',
-        content: '💭 Generating answer with LLM...',
-        timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, llmGeneratingMessage]);
-
-      // Small delay for visual effect
-      await new Promise(resolve => setTimeout(resolve, 300));
-
-      // Step 4: Show final answer
+      // Show final answer with metadata
       const answerMessage: Message = {
-        id: llmMessageId,
+        id: processingMessageId,
         type: 'assistant',
         content: response.answer,
         timestamp: new Date(),
+        sources: response.sources,
+        retrievedChunks: response.retrieved_chunks,
         timeConsumed: response.time_consumed,
         totalTokens: response.total_tokens,
         promptTokens: response.prompt_tokens,
@@ -116,7 +90,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ selectedDocIds }) => {
         reformulationPromptTokens: response.reformulation_prompt_tokens,
         reformulationCompletionTokens: response.reformulation_completion_tokens,
       };
-      setMessages((prev) => prev.map(msg => msg.id === llmMessageId ? answerMessage : msg));
+      setMessages((prev) => prev.map(msg => msg.id === processingMessageId ? answerMessage : msg));
 
     } catch (error: any) {
       console.error('Query error:', error);
@@ -142,17 +116,16 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ selectedDocIds }) => {
   return (
     <Card
       title={
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <span>Intelligent Q&A</span>
-          {selectedDocIds.length > 0 && (
-            <Tag color="blue" style={{ marginLeft: 8 }}>
-              Querying {selectedDocIds.length} selected document{selectedDocIds.length > 1 ? 's' : ''}
-            </Tag>
-          )}
-          {selectedDocIds.length === 0 && (
-            <Tag color="default" style={{ marginLeft: 8 }}>
-              Querying all documents
-            </Tag>
+          {selectedDocIds.length > 0 ? (
+            <span style={{ fontSize: 12, color: '#1890ff' }}>
+              ({selectedDocIds.length} doc{selectedDocIds.length > 1 ? 's' : ''})
+            </span>
+          ) : (
+            <span style={{ fontSize: 12, color: '#999' }}>
+              (all docs)
+            </span>
           )}
         </div>
       }
@@ -204,6 +177,13 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ selectedDocIds }) => {
                       maxWidth: '100%',
                     }}
                   >
+                    {/* Show retrieval info for assistant messages with sources */}
+                    {message.type === 'assistant' && message.retrievedChunks !== undefined && message.retrievedChunks > 0 && (
+                      <div style={{ fontSize: 11, color: '#999', marginBottom: 8 }}>
+                        📚 Retrieved {message.retrievedChunks} chunks
+                      </div>
+                    )}
+
                     <div style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
                       {message.content}
                     </div>
@@ -212,15 +192,14 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ selectedDocIds }) => {
                       <Collapse
                         ghost
                         size="small"
-                        style={{ marginTop: 8 }}
+                        style={{ marginTop: 6 }}
                         items={[
                           {
                             key: '1',
                             label: (
-                              <Space size="small">
-                                <FileTextOutlined style={{ fontSize: 12 }} />
-                                <span style={{ fontSize: 12 }}>View Sources</span>
-                              </Space>
+                              <span style={{ fontSize: 11, color: '#1890ff', cursor: 'pointer' }}>
+                                📄 View Sources ({message.sources.length})
+                              </span>
                             ),
                             children: (
                               <div>
@@ -228,18 +207,15 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ selectedDocIds }) => {
                                   <div
                                     key={idx}
                                     style={{
-                                      marginBottom: 6,
-                                      padding: 6,
+                                      marginBottom: 8,
+                                      padding: 8,
                                       backgroundColor: '#fafafa',
                                       borderRadius: 4,
                                       borderLeft: '3px solid #1890ff',
                                     }}
                                   >
-                                    <div style={{ marginBottom: 4, display: 'flex', gap: 6 }}>
-                                      <Tag color="blue" style={{ margin: 0, fontSize: 11 }}>#{idx + 1}</Tag>
-                                      <Tag color="green" style={{ margin: 0, fontSize: 11 }}>
-                                        {(source.similarity_score * 100).toFixed(0)}%
-                                      </Tag>
+                                    <div style={{ marginBottom: 6, fontSize: 11, color: '#999' }}>
+                                      #{idx + 1} • Similarity: {(source.similarity_score * 100).toFixed(0)}%
                                     </div>
                                     <div style={{ fontSize: 12, color: '#666', lineHeight: 1.5 }}>
                                       {source.text}
@@ -253,31 +229,15 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ selectedDocIds }) => {
                       />
                     )}
 
-                    {message.type === 'assistant' && (message.timeConsumed !== undefined || message.totalTokens !== undefined || message.reformulationTokens !== undefined) && (
-                      <div style={{ marginTop: 12, fontSize: 12, color: '#666', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                    {message.type === 'assistant' && (message.timeConsumed !== undefined || message.totalTokens !== undefined) && (
+                      <div style={{ marginTop: 8, fontSize: 11, color: '#999', display: 'flex', alignItems: 'center', gap: 6 }}>
                         {message.timeConsumed !== undefined && (
-                          <Tag color="blue">
-                            Time: {message.timeConsumed}s
-                          </Tag>
+                          <span>⏱️ {message.timeConsumed}s</span>
                         )}
-                        {(message.reformulationTokens !== undefined || message.totalTokens !== undefined) && (
+                        {message.totalTokens !== undefined && message.totalTokens > 0 && (
                           <>
-                            <Tag color="purple">
-                              Tokens: {((message.reformulationTokens || 0) + (message.totalTokens || 0))}
-                            </Tag>
-                            <span style={{ color: '#999' }}>
-                              (
-                                {message.reformulationTokens !== undefined && message.reformulationTokens > 0 && (
-                                  <>Reformulation: {message.reformulationTokens}</>
-                                )}
-                                {message.totalTokens !== undefined && message.totalTokens > 0 && (
-                                  <>
-                                    {message.reformulationTokens !== undefined && message.reformulationTokens > 0 && ', '}
-                                    Prompt: {message.promptTokens}, Completion: {message.completionTokens}
-                                  </>
-                                )}
-                              )
-                            </span>
+                            {message.timeConsumed !== undefined && <span>•</span>}
+                            <span>🔤 {message.totalTokens} tokens</span>
                           </>
                         )}
                       </div>

@@ -5,6 +5,7 @@ Run this script to start the FastAPI server
 import os
 # Disable ChromaDB telemetry before any other imports
 os.environ["ANONYMIZED_TELEMETRY"] = "False"
+os.environ["CHROMA_TELEMETRY_DISABLED"] = "TRUE"
 
 import uvicorn
 from app.config import settings

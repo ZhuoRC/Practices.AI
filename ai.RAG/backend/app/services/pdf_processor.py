@@ -106,12 +106,27 @@ class PDFProcessor:
             with open(file_path, "rb") as file:
                 pdf_reader = PyPDF2.PdfReader(file)
 
+                # Check if PDF is encrypted
+                if pdf_reader.is_encrypted:
+                    # Try to decrypt with empty password (some PDFs are encrypted but don't require password)
+                    try:
+                        pdf_reader.decrypt("")
+                    except:
+                        raise Exception("PDF is password-protected. Please provide an unencrypted PDF or the password.")
+
                 for page_num in range(len(pdf_reader.pages)):
                     page = pdf_reader.pages[page_num]
                     text += page.extract_text()
 
         except Exception as e:
-            raise Exception(f"Error extracting text from PDF: {str(e)}")
+            error_msg = str(e)
+            # Provide helpful error messages for common issues
+            if "PyCryptodome" in error_msg or "Crypto" in error_msg:
+                raise Exception("PDF encryption not supported. Please install PyCryptodome: pip install pycryptodome")
+            elif "password" in error_msg.lower() or "encrypted" in error_msg.lower():
+                raise Exception("PDF is password-protected. Please provide an unencrypted version.")
+            else:
+                raise Exception(f"Error extracting text from PDF: {error_msg}")
 
         return text
 
@@ -216,23 +231,29 @@ class PDFProcessor:
             file_path = self.storage_path / stored_filename
 
             if file_path.exists():
-                # Parse upload_time to yyyy-mm-dd format
+                # Keep full ISO timestamp for sorting, but also provide formatted date
                 upload_time = meta.get("upload_time", "")
                 if upload_time:
+                    upload_time_iso = upload_time
                     try:
                         dt = datetime.fromisoformat(upload_time)
                         formatted_date = dt.strftime("%Y-%m-%d")
                     except:
                         formatted_date = upload_time
+                        upload_time_iso = upload_time
                 else:
-                    formatted_date = datetime.fromtimestamp(file_path.stat().st_mtime).strftime("%Y-%m-%d")
+                    mtime = file_path.stat().st_mtime
+                    dt = datetime.fromtimestamp(mtime)
+                    formatted_date = dt.strftime("%Y-%m-%d")
+                    upload_time_iso = dt.isoformat()
 
                 pdfs.append({
                     "document_id": doc_id,
                     "filename": meta["original_filename"],  # Return original filename
                     "stored_filename": stored_filename,
                     "file_size": meta.get("file_size", file_path.stat().st_size),
-                    "upload_time": formatted_date,
+                    "upload_time": formatted_date,  # For display
+                    "upload_time_iso": upload_time_iso,  # For sorting
                     "modified_time": file_path.stat().st_mtime
                 })
 
@@ -245,14 +266,19 @@ class PDFProcessor:
                 continue
 
             # Legacy file without metadata
-            formatted_date = datetime.fromtimestamp(file_path.stat().st_mtime).strftime("%Y-%m-%d")
+            mtime = file_path.stat().st_mtime
+            dt = datetime.fromtimestamp(mtime)
+            formatted_date = dt.strftime("%Y-%m-%d")
+            upload_time_iso = dt.isoformat()
+
             pdfs.append({
                 "document_id": file_path.stem,  # Use filename stem as doc_id for legacy files
                 "filename": filename,
                 "stored_filename": filename,
                 "file_size": file_path.stat().st_size,
-                "upload_time": formatted_date,
-                "modified_time": file_path.stat().st_mtime
+                "upload_time": formatted_date,  # For display
+                "upload_time_iso": upload_time_iso,  # For sorting
+                "modified_time": mtime
             })
 
         return pdfs

@@ -68,29 +68,26 @@ class RAGService:
             # Start timing
             start_time = time.time()
 
+            # Log original query
+            print(f"[RAG Query] Original Question:")
+            print(f"{question}")
+
             # Step 1: Query Reformulation - rewrite question for better retrieval
-            print(f"Reformulating query: {question[:50]}...")
             reformulated_question, reformulation_tokens = await self._reformulate_query(question)
-            print(f"Reformulated question: {reformulated_question[:50]}...")
-            if reformulation_tokens:
-                print(f"Reformulation tokens: {reformulation_tokens.get('total_tokens', 0)}")
+
+            # Log reformulated query
+            print(f"\n[RAG Query] Reformulated Question:")
+            print(f"{reformulated_question}")
 
             # Step 2: Generate embedding for the reformulated question (run in thread pool to avoid blocking)
-            print(f"Generating embedding for reformulated question...")
             question_embedding = await asyncio.to_thread(embedding_service.embed_text, reformulated_question)
-            print(f"Embedding generated successfully. Dimension: {len(question_embedding)}")
 
             # Step 3: Search for relevant chunks
-            if document_ids:
-                print(f"Searching vector store for top {top_k or settings.top_k} chunks in documents: {document_ids}")
-            else:
-                print(f"Searching vector store for top {top_k or settings.top_k} chunks (all documents)...")
             search_results = vector_store.search(
                 query_embedding=question_embedding,
                 top_k=top_k,
                 document_ids=document_ids
             )
-            print(f"Found {len(search_results['documents'])} chunks")
 
             # Step 4: Prepare context from retrieved chunks
             context_chunks = search_results["documents"]
@@ -113,17 +110,14 @@ class RAGService:
 
             # Combine chunks into context
             context = "\n\n".join([f"[Document Chunk {i+1}]\n{chunk}" for i, chunk in enumerate(context_chunks)])
-            print(f"Context prepared. Total length: {len(context)} characters")
 
             # Step 5: Build prompt for Qwen (use original question, not reformulated)
             prompt = self._build_prompt(question, context)
 
             # Step 6: Call LLM API to generate answer
-            print(f"Calling {self.provider} API at {self.api_url}...")
             llm_result = await self._call_llm_api(prompt)
             answer = llm_result["content"]
             token_usage = llm_result.get("usage", {})
-            print(f"Answer generated successfully. Length: {len(answer)} characters")
 
             # Calculate time consumed
             end_time = time.time()
@@ -263,13 +257,11 @@ QUESTION:
 
             # If reformulation failed or is empty, use original question
             if not reformulated or len(reformulated) < 3:
-                print("Query reformulation failed or returned empty, using original question")
                 return question, {}
 
             return reformulated, token_usage
 
         except Exception as e:
-            print(f"Error in query reformulation: {str(e)}. Using original question")
             return question, {}
 
     def _build_prompt(self, question: str, context: str) -> str:
@@ -335,16 +327,11 @@ QUESTION:
                     }
                 }
 
-                print(f"Sending request to Ollama API: {self.api_url}")
-                print(f"Using model: {self.model}")
-
                 response = await client.post(
                     self.api_url,
                     json=payload,
                     headers=headers
                 )
-
-                print(f"Ollama API response status: {response.status_code}")
 
                 response.raise_for_status()
                 result = response.json()
@@ -423,16 +410,11 @@ QUESTION:
                     "enable_thinking": False  # Required for non-streaming calls
                 }
 
-                print(f"Sending request to DashScope API: {self.api_url}")
-                print(f"Using model: {self.model}")
-
                 response = await client.post(
                     self.api_url,
                     json=payload,
                     headers=headers
                 )
-
-                print(f"DashScope API response status: {response.status_code}")
 
                 response.raise_for_status()
                 result = response.json()

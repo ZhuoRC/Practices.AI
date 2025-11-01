@@ -1,33 +1,61 @@
-from fastapi import APIRouter, UploadFile, File, HTTPException
+from fastapi import APIRouter, UploadFile, File, HTTPException, BackgroundTasks
 from typing import List, Optional
 from pydantic import BaseModel, Field
 import asyncio
+import uuid
 from ..services.pdf_processor import pdf_processor
 from ..services.embeddings import embedding_service
 from ..services.vector_store import vector_store
+from ..services.task_manager import task_manager, TaskStatus
 
 router = APIRouter(prefix="/api/documents", tags=["documents"])
 
 
 # Response Models
 class UploadDocumentResponse(BaseModel):
-    """Response model for document upload"""
-    success: bool = Field(..., description="Whether the upload was successful")
-    message: str = Field(..., description="Success or error message")
-    document_id: str = Field(..., description="Unique document identifier")
-    original_filename: str = Field(..., description="Original filename of the uploaded PDF")
-    total_chunks: int = Field(..., description="Number of text chunks created from the document")
-    file_size: int = Field(..., description="File size in bytes")
+    """Response model for document upload (async)"""
+    success: bool = Field(..., description="Whether the upload was accepted")
+    message: str = Field(..., description="Status message")
+    task_id: str = Field(..., description="Task ID for tracking upload progress")
+    filename: str = Field(..., description="Original filename of the uploaded PDF")
 
     class Config:
         json_schema_extra = {
             "example": {
                 "success": True,
-                "message": "Document uploaded and processed successfully",
-                "document_id": "doc_20240101_120000_abc123",
-                "original_filename": "sample.pdf",
-                "total_chunks": 15,
-                "file_size": 245678
+                "message": "Document upload started. Processing in background.",
+                "task_id": "task_abc123",
+                "filename": "sample.pdf"
+            }
+        }
+
+
+class TaskStatusResponse(BaseModel):
+    """Response model for task status"""
+    task_id: str = Field(..., description="Task ID")
+    task_type: str = Field(..., description="Type of task")
+    filename: str = Field(..., description="Filename being processed")
+    status: str = Field(..., description="Task status: pending, processing, completed, failed")
+    progress: int = Field(..., description="Progress percentage (0-100)")
+    message: str = Field(..., description="Status message")
+    created_at: str = Field(..., description="Task creation time")
+    updated_at: str = Field(..., description="Last update time")
+    result: Optional[dict] = Field(None, description="Result data (available when completed)")
+    error: Optional[str] = Field(None, description="Error message (if failed)")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "task_id": "task_abc123",
+                "task_type": "document_upload",
+                "filename": "sample.pdf",
+                "status": "processing",
+                "progress": 50,
+                "message": "Generating embeddings...",
+                "created_at": "2024-01-01T12:00:00",
+                "updated_at": "2024-01-01T12:00:30",
+                "result": None,
+                "error": None
             }
         }
 
@@ -38,6 +66,7 @@ class DocumentInfo(BaseModel):
     filename: str = Field(..., description="Original filename")
     file_size: int = Field(..., description="File size in bytes")
     upload_time: str = Field(..., description="Upload timestamp (YYYY-MM-DD)")
+    upload_time_iso: str = Field(..., description="Upload timestamp in ISO format for sorting")
     total_chunks: int = Field(..., description="Number of text chunks")
 
     class Config:
@@ -47,6 +76,7 @@ class DocumentInfo(BaseModel):
                 "filename": "sample.pdf",
                 "file_size": 245678,
                 "upload_time": "2024-01-01",
+                "upload_time_iso": "2024-01-01T12:00:00.123456",
                 "total_chunks": 15
             }
         }
@@ -98,17 +128,137 @@ class DeleteDocumentResponse(BaseModel):
         }
 
 
-@router.post("/upload", response_model=UploadDocumentResponse, summary="Upload PDF Document")
-async def upload_document(file: UploadFile = File(..., description="PDF file to upload and process")):
+async def process_document_upload(
+    task_id: str,
+    content: bytes,
+    filename: str,
+    document_id: str,
+    file_path: str,
+    original_filename: str
+):
     """
-    Upload a PDF document and process it for RAG.
+    Background task to process document upload
+    """
+    try:
+        # Update status: processing
+        task_manager.update_task(
+            task_id,
+            status=TaskStatus.PROCESSING,
+            progress=10,
+            message="Extracting text from PDF..."
+        )
+
+        # Process PDF: extract text and create chunks
+        chunks = await pdf_processor.process_pdf(file_path, document_id)
+
+        if not chunks:
+            # Clean up the saved PDF file since processing failed
+            try:
+                pdf_processor.delete_pdf(document_id)
+                print(f"Cleaned up orphaned PDF file for document: {document_id}")
+            except Exception as cleanup_error:
+                print(f"Error cleaning up PDF file: {cleanup_error}")
+
+            task_manager.update_task(
+                task_id,
+                status=TaskStatus.FAILED,
+                progress=0,
+                message="No text content found in PDF",
+                error="No text content found in PDF"
+            )
+            return
+
+        task_manager.update_task(
+            task_id,
+            status=TaskStatus.PROCESSING,
+            progress=30,
+            message=f"Generating embeddings for {len(chunks)} chunks..."
+        )
+
+        # Generate embeddings for all chunks (run in thread pool to avoid blocking)
+        chunk_texts = [chunk["text"] for chunk in chunks]
+        embeddings = await asyncio.to_thread(embedding_service.embed_texts, chunk_texts)
+
+        task_manager.update_task(
+            task_id,
+            status=TaskStatus.PROCESSING,
+            progress=70,
+            message="Storing in vector database..."
+        )
+
+        # Prepare data for vector store
+        chunk_ids = [chunk["chunk_id"] for chunk in chunks]
+        metadatas = [
+            {
+                "document_id": chunk["document_id"],
+                "chunk_index": chunk["chunk_index"],
+                "total_chunks": chunk["total_chunks"],
+                "original_filename": original_filename
+            }
+            for chunk in chunks
+        ]
+
+        # Store in vector database
+        vector_store.add_documents(
+            documents=chunk_texts,
+            embeddings=embeddings,
+            metadatas=metadatas,
+            ids=chunk_ids
+        )
+
+        # Update status: completed
+        task_manager.update_task(
+            task_id,
+            status=TaskStatus.COMPLETED,
+            progress=100,
+            message="Document uploaded and processed successfully",
+            result={
+                "document_id": document_id,
+                "original_filename": original_filename,
+                "total_chunks": len(chunks),
+                "file_size": len(content)
+            }
+        )
+
+    except Exception as e:
+        print(f"Error processing document upload: {type(e).__name__}: {str(e)}")
+        import traceback
+        traceback.print_exc()
+
+        # Clean up the saved PDF file since processing failed
+        try:
+            pdf_processor.delete_pdf(document_id)
+            print(f"Cleaned up orphaned PDF file for document: {document_id}")
+        except Exception as cleanup_error:
+            print(f"Error cleaning up PDF file: {cleanup_error}")
+
+        task_manager.update_task(
+            task_id,
+            status=TaskStatus.FAILED,
+            progress=0,
+            message=f"Error processing document: {str(e)}",
+            error=str(e)
+        )
+
+
+@router.post("/upload", response_model=UploadDocumentResponse, summary="Upload PDF Document (Async)")
+async def upload_document(
+    background_tasks: BackgroundTasks,
+    file: UploadFile = File(..., description="PDF file to upload and process")
+):
+    """
+    Upload a PDF document and process it asynchronously in the background.
 
     The document will be:
     1. Validated as a PDF file
     2. Saved to the storage directory
-    3. Split into text chunks
-    4. Converted to embeddings
-    5. Stored in the vector database for similarity search
+    3. Split into text chunks (background)
+    4. Converted to embeddings (background)
+    5. Stored in the vector database for similarity search (background)
+
+    **Returns immediately** with a task_id that can be used to track progress.
+
+    Use the `/tasks/{task_id}` endpoint to check the upload status.
 
     **Note**: Only PDF files are supported.
     """
@@ -125,49 +275,93 @@ async def upload_document(file: UploadFile = File(..., description="PDF file to 
         document_id = save_result["document_id"]
         file_path = save_result["file_path"]
 
-        # Process PDF: extract text and create chunks
-        chunks = await pdf_processor.process_pdf(file_path, document_id)
+        # Create task
+        task_id = f"task_{uuid.uuid4().hex[:12]}"
+        task_manager.create_task(task_id, "document_upload", file.filename)
 
-        if not chunks:
-            raise HTTPException(status_code=400, detail="No text content found in PDF")
-
-        # Generate embeddings for all chunks (run in thread pool to avoid blocking)
-        chunk_texts = [chunk["text"] for chunk in chunks]
-        embeddings = await asyncio.to_thread(embedding_service.embed_texts, chunk_texts)
-
-        # Prepare data for vector store
-        chunk_ids = [chunk["chunk_id"] for chunk in chunks]
-        metadatas = [
-            {
-                "document_id": chunk["document_id"],
-                "chunk_index": chunk["chunk_index"],
-                "total_chunks": chunk["total_chunks"],
-                "original_filename": save_result["original_filename"]
-            }
-            for chunk in chunks
-        ]
-
-        # Store in vector database
-        vector_store.add_documents(
-            documents=chunk_texts,
-            embeddings=embeddings,
-            metadatas=metadatas,
-            ids=chunk_ids
+        # Start background processing
+        background_tasks.add_task(
+            process_document_upload,
+            task_id,
+            content,
+            file.filename,
+            document_id,
+            file_path,
+            save_result["original_filename"]
         )
 
         return {
             "success": True,
-            "message": "Document uploaded and processed successfully",
-            "document_id": document_id,
-            "original_filename": save_result["original_filename"],
-            "total_chunks": len(chunks),
-            "file_size": len(content)
+            "message": "Document upload started. Processing in background.",
+            "task_id": task_id,
+            "filename": file.filename
         }
 
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error processing document: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error uploading document: {str(e)}")
+
+
+@router.get("/tasks/{task_id}", response_model=TaskStatusResponse, summary="Get Task Status")
+async def get_task_status(task_id: str):
+    """
+    Get the status of an upload task.
+
+    Use this endpoint to check the progress of a document upload that was started
+    asynchronously.
+
+    **Parameters**:
+    - **task_id**: The task ID returned from the upload endpoint
+
+    **Returns**:
+    - Task status information including progress, status, and result (if completed)
+    """
+    task = task_manager.get_task(task_id)
+
+    if not task:
+        raise HTTPException(status_code=404, detail=f"Task not found: {task_id}")
+
+    return task.to_dict()
+
+
+@router.get("/tasks", summary="List All Tasks")
+async def list_tasks():
+    """
+    List all tasks in the system.
+
+    Returns a list of all upload tasks with their current status.
+    """
+    tasks = task_manager.list_tasks()
+    return {
+        "success": True,
+        "total_tasks": len(tasks),
+        "tasks": tasks
+    }
+
+
+@router.delete("/tasks/{task_id}", summary="Delete Task")
+async def delete_task(task_id: str):
+    """
+    Delete a task from the task manager.
+
+    This only removes the task tracking information, not the uploaded document.
+
+    **Parameters**:
+    - **task_id**: The task ID to delete
+    """
+    task = task_manager.get_task(task_id)
+
+    if not task:
+        raise HTTPException(status_code=404, detail=f"Task not found: {task_id}")
+
+    task_manager.delete_task(task_id)
+
+    return {
+        "success": True,
+        "message": "Task deleted successfully",
+        "task_id": task_id
+    }
 
 
 @router.post("/_cleanup/orphaned")
@@ -207,23 +401,28 @@ async def cleanup_orphaned_documents():
             "vector_entries_deleted": 0
         }
 
-        # Optionally delete orphaned data (for now just report)
-        # Uncomment below to actually delete orphaned data
-        """
+        # Delete orphaned PDFs (PDF exists but no vector data)
         for doc_id in orphaned_pdfs:
-            filename = f"{doc_id}.pdf"
-            if pdf_processor.delete_pdf(filename):
-                cleanup_report["pdfs_deleted"] += 1
+            try:
+                if pdf_processor.delete_pdf(doc_id):
+                    cleanup_report["pdfs_deleted"] += 1
+                    print(f"Deleted orphaned PDF: {doc_id}")
+            except Exception as e:
+                print(f"Error deleting orphaned PDF {doc_id}: {e}")
 
+        # Delete orphaned vector data (vector data exists but no PDF)
         for doc_id in orphaned_vectors:
-            chunks_deleted = vector_store.delete_by_document_id(doc_id)
-            if chunks_deleted > 0:
-                cleanup_report["vector_entries_deleted"] += 1
-        """
+            try:
+                chunks_deleted = vector_store.delete_by_document_id(doc_id)
+                if chunks_deleted > 0:
+                    cleanup_report["vector_entries_deleted"] += 1
+                    print(f"Deleted orphaned vector data for: {doc_id} ({chunks_deleted} chunks)")
+            except Exception as e:
+                print(f"Error deleting orphaned vector data {doc_id}: {e}")
 
         return {
             "success": True,
-            "message": "Cleanup scan completed (use /_cleanup/orphaned/delete to remove orphaned data)",
+            "message": f"Cleanup completed: {cleanup_report['pdfs_deleted']} PDFs and {cleanup_report['vector_entries_deleted']} vector entries deleted",
             **cleanup_report
         }
 
@@ -364,13 +563,19 @@ async def list_documents():
             # Get chunks for this document
             chunks = vector_store.get_document_chunks(doc_id)
 
-            documents.append({
-                "document_id": doc_id,
-                "filename": pdf["filename"],  # Original filename
-                "file_size": pdf["file_size"],
-                "upload_time": pdf.get("upload_time", ""),  # Formatted as yyyy-mm-dd
-                "total_chunks": len(chunks)
-            })
+            # Only include documents that have chunks (filter out orphaned PDFs)
+            if len(chunks) > 0:
+                documents.append({
+                    "document_id": doc_id,
+                    "filename": pdf["filename"],  # Original filename
+                    "file_size": pdf["file_size"],
+                    "upload_time": pdf.get("upload_time", ""),  # Formatted as yyyy-mm-dd
+                    "upload_time_iso": pdf.get("upload_time_iso", pdf.get("upload_time", "")),  # ISO timestamp for sorting
+                    "total_chunks": len(chunks)
+                })
+            else:
+                # Log orphaned PDF for debugging
+                print(f"Warning: Orphaned PDF found (no chunks): {doc_id} - {pdf['filename']}")
 
         return {
             "success": True,

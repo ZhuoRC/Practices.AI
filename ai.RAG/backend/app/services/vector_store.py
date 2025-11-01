@@ -1,7 +1,11 @@
 from typing import List, Dict, Optional
+import os
 import chromadb
 from chromadb.config import Settings as ChromaSettings
 from ..config import settings
+
+# Disable ChromaDB telemetry to avoid errors
+os.environ["ANONYMIZED_TELEMETRY"] = "False"
 
 
 class VectorStore:
@@ -73,6 +77,9 @@ class VectorStore:
         if top_k is None:
             top_k = settings.top_k
 
+        # Get total chunks count
+        total_chunks_in_db = self.collection.count()
+
         # Build where clause for filtering by document_ids
         where_clause = None
         if document_ids:
@@ -80,13 +87,30 @@ class VectorStore:
                 where_clause = {"document_id": document_ids[0]}
             else:
                 where_clause = {"document_id": {"$in": document_ids}}
-            print(f"Filtering search by document_ids: {document_ids}")
 
+            # Count filtered chunks
+            try:
+                filtered_results = self.collection.get(where=where_clause)
+                filtered_count = len(filtered_results["ids"]) if filtered_results["ids"] else 0
+                print(f"[VectorSearch] Filter: {len(document_ids)} docs | {filtered_count}/{total_chunks_in_db} chunks | top_k={top_k}")
+            except Exception as e:
+                print(f"[VectorSearch] Filter: {len(document_ids)} docs | top_k={top_k}")
+        else:
+            print(f"[VectorSearch] No filter | {total_chunks_in_db} chunks | top_k={top_k}")
+
+        # IMPORTANT: ChromaDB applies the where filter BEFORE similarity search
         results = self.collection.query(
             query_embeddings=[query_embedding],
             n_results=top_k,
             where=where_clause
         )
+
+        # Log results
+        results_count = len(results["ids"][0]) if results["ids"] else 0
+        if results_count > 0:
+            print(f"[VectorSearch] Found {results_count} chunks | Top similarity: {1 - results['distances'][0][0]:.4f}")
+        else:
+            print(f"[VectorSearch] No results found")
 
         return {
             "documents": results["documents"][0] if results["documents"] else [],
