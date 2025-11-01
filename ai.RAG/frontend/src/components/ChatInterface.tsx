@@ -123,7 +123,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ selectedDocIds }) => {
               ({selectedDocIds.length} doc{selectedDocIds.length > 1 ? 's' : ''})
             </span>
           ) : (
-            <span style={{ fontSize: 12, color: '#999' }}>
+            <span style={{ fontSize: 12, color: '#666' }}>
               (all docs)
             </span>
           )}
@@ -179,7 +179,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ selectedDocIds }) => {
                   >
                     {/* Show retrieval info for assistant messages with sources */}
                     {message.type === 'assistant' && message.retrievedChunks !== undefined && message.retrievedChunks > 0 && (
-                      <div style={{ fontSize: 11, color: '#999', marginBottom: 8 }}>
+                      <div style={{ fontSize: 11, color: '#666', marginBottom: 8 }}>
                         📚 Retrieved {message.retrievedChunks} chunks
                       </div>
                     )}
@@ -214,7 +214,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ selectedDocIds }) => {
                                       borderLeft: '3px solid #1890ff',
                                     }}
                                   >
-                                    <div style={{ marginBottom: 6, fontSize: 11, color: '#999' }}>
+                                    <div style={{ marginBottom: 6, fontSize: 11, color: '#666' }}>
                                       #{idx + 1} • Similarity: {(source.similarity_score * 100).toFixed(0)}%
                                     </div>
                                     <div style={{ fontSize: 12, color: '#666', lineHeight: 1.5 }}>
@@ -230,7 +230,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ selectedDocIds }) => {
                     )}
 
                     {message.type === 'assistant' && (message.timeConsumed !== undefined || message.totalTokens !== undefined) && (
-                      <div style={{ marginTop: 8, fontSize: 11, color: '#999', display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <div style={{ marginTop: 8, fontSize: 11, color: '#666', display: 'flex', alignItems: 'center', gap: 6 }}>
                         {message.timeConsumed !== undefined && (
                           <span>⏱️ {message.timeConsumed}s</span>
                         )}

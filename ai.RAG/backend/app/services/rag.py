@@ -123,6 +123,17 @@ class RAGService:
             end_time = time.time()
             time_consumed = round(end_time - start_time, 2)
 
+            # Log token usage
+            print(f"\n[Token Usage] Answer Generation:")
+            print(f"  Prompt tokens: {token_usage.get('prompt_tokens', 0)}")
+            print(f"  Completion tokens: {token_usage.get('completion_tokens', 0)}")
+            print(f"  Total tokens: {token_usage.get('total_tokens', 0)}")
+            print(f"[Token Usage] Query Reformulation:")
+            print(f"  Prompt tokens: {reformulation_tokens.get('prompt_tokens', 0)}")
+            print(f"  Completion tokens: {reformulation_tokens.get('completion_tokens', 0)}")
+            print(f"  Total tokens: {reformulation_tokens.get('total_tokens', 0)}")
+            print(f"[Total] All tokens: {token_usage.get('total_tokens', 0) + reformulation_tokens.get('total_tokens', 0)} | Time: {time_consumed}s\n")
+
             # Step 7: Prepare response
             response = {
                 "answer": answer,

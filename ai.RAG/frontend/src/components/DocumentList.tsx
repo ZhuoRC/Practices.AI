@@ -523,7 +523,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
               </div>
               <div style={{
                 textAlign: 'center',
-                color: '#999',
+                color: '#666',
                 fontSize: '12px',
                 padding: '8px',
                 background: '#f5f5f5',
