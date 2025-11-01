@@ -1,0 +1,146 @@
+[
+  {
+    "id": "20251101_002341_516290",
+    "timestamp": "2025-11-01T00:23:41.516290",
+    "source_type": "document",
+    "source_name": "尘埃落定（阿来）_20251031002219.pdf",
+    "num_chunks": 94,
+    "processing_time": 210.51,
+    "model": "qwen3-30b-a3b",
+    "provider": "cloud",
+    "token_usage": {
+      "prompt_tokens": 221815,
+      "completion_tokens": 13040,
+      "total_tokens": 234855
+    },
+    "original_length": 264063
+  },
+  {
+    "id": "20251031_234139_828169",
+    "timestamp": "2025-10-31T23:41:39.828169",
+    "source_type": "webpage",
+    "source_name": "https://www.youtube.com/watch?v=tU9LJw-q018&list=PLMUnYeeTvzNsu5Z2B17k_VlzOPnB45A1n&index=1",
+    "num_chunks": 1,
+    "processing_time": 13.01,
+    "model": "qwen3-30b-a3b",
+    "provider": "cloud",
+    "token_usage": {
+      "prompt_tokens": 600,
+      "completion_tokens": 1014,
+      "total_tokens": 1614
+    },
+    "original_length": 164
+  },
+  {
+    "id": "20251031_233811_880695",
+    "timestamp": "2025-10-31T23:38:11.880695",
+    "source_type": "document",
+    "source_name": "城投债2023年回顾与2024年展望.pdf",
+    "num_chunks": 13,
+    "processing_time": 74.47,
+    "model": "qwen3-30b-a3b",
+    "provider": "cloud",
+    "token_usage": {
+      "prompt_tokens": 30001,
+      "completion_tokens": 4885,
+      "total_tokens": 34886
+    },
+    "original_length": 33248
+  },
+  {
+    "id": "20251031_233547_653136",
+    "timestamp": "2025-10-31T23:35:47.653136",
+    "source_type": "document",
+    "source_name": "再看迈瑞医疗(300760)：估值回归，市场前景依旧广阔.pdf",
+    "num_chunks": 10,
+    "processing_time": 54.34,
+    "model": "qwen3-30b-a3b",
+    "provider": "cloud",
+    "token_usage": {
+      "prompt_tokens": 24113,
+      "completion_tokens": 3641,
+      "total_tokens": 27754
+    },
+    "original_length": 33043
+  },
+  {
+    "id": "20251031_233050_313894",
+    "timestamp": "2025-10-31T23:30:50.313894",
+    "source_type": "webpage",
+    "source_name": "https://www.morganstanley.com/insights/articles/private-tech-agentic-ai-spark-conference",
+    "num_chunks": 4,
+    "processing_time": 36.62,
+    "model": "qwen3-30b-a3b",
+    "provider": "cloud",
+    "token_usage": {
+      "prompt_tokens": 3164,
+      "completion_tokens": 3204,
+      "total_tokens": 6368
+    },
+    "original_length": 10294
+  },
+  {
+    "id": "20251031_232344_101676",
+    "timestamp": "2025-10-31T23:23:44.101676",
+    "source_type": "webpage",
+    "source_name": "https://www.morganstanley.com/insights/articles/private-tech-agentic-ai-spark-conference",
+    "num_chunks": 4,
+    "processing_time": 23.16,
+    "model": "qwen3-30b-a3b",
+    "provider": "cloud",
+    "token_usage": {
+      "prompt_tokens": 3199,
+      "completion_tokens": 1650,
+      "total_tokens": 4849
+    },
+    "original_length": 10294
+  },
+  {
+    "id": "20251031_231833_567870",
+    "timestamp": "2025-10-31T23:18:33.567870",
+    "source_type": "webpage",
+    "source_name": "https://www.morganstanley.com/insights/articles/private-tech-agentic-ai-spark-conference",
+    "num_chunks": 4,
+    "processing_time": 25.03,
+    "model": "qwen3-32b",
+    "provider": "cloud",
+    "token_usage": {
+      "prompt_tokens": 3048,
+      "completion_tokens": 787,
+      "total_tokens": 3835
+    },
+    "original_length": 10294
+  },
+  {
+    "id": "20251031_230337_620479",
+    "timestamp": "2025-10-31T23:03:37.620479",
+    "source_type": "webpage",
+    "source_name": "https://www.nuvei.com/posts/payment-trends",
+    "num_chunks": 4,
+    "processing_time": 37.07,
+    "model": "qwen3-32b",
+    "provider": "cloud",
+    "token_usage": {
+      "prompt_tokens": 3062,
+      "completion_tokens": 876,
+      "total_tokens": 3938
+    },
+    "original_length": 10239
+  },
+  {
+    "id": "20251031_230223_504103",
+    "timestamp": "2025-10-31T23:02:23.504103",
+    "source_type": "webpage",
+    "source_name": "https://www.nuvei.com/posts/payment-trends",
+    "num_chunks": 4,
+    "processing_time": 30.57,
+    "model": "qwen3-32b",
+    "provider": "cloud",
+    "token_usage": {
+      "prompt_tokens": 3027,
+      "completion_tokens": 833,
+      "total_tokens": 3860
+    },
+    "original_length": 10239
+  }
+]

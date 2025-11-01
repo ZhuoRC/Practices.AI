@@ -6,7 +6,6 @@ __pycache__/
 .Python
 env/
 venv/
-.venv/
 ENV/
 build/
 develop-eggs/
@@ -24,15 +23,39 @@ wheels/
 .installed.cfg
 *.egg
 
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+dist/
+dist-ssr/
+*.local
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Data
+data/pdfs/*
+data/chroma_db/*
+!data/pdfs/.gitkeep
+!data/chroma_db/.gitkeep
+
 # IDE
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
+.DS_Store
 
+# Logs
+logs/
+*.log
 
-# Qwen Image Local
-/ai.qwen-image-local/qwen_image/output/*
-/ai.qwen-image-local/qwen_image_edit/input/*
-/ai.qwen-image-local/qwen_image_edit/output/*
+.venv/
+ai.qwen-image-local/qwen_image/output/*
+ai.qwen-image-local/qwen_image_edit/input/*
+ai.qwen-image-local/qwen_image_edit/output/*

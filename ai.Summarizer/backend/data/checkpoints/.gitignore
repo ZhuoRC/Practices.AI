@@ -1,0 +1,5 @@
+# Ignore all checkpoint files
+*.json
+
+# Keep the .gitkeep file
+!.gitkeep

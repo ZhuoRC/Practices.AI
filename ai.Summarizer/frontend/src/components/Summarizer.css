@@ -1,0 +1,97 @@
+.summarizer-layout {
+  min-height: 100vh;
+  background: #f5f7fa;
+}
+
+.summarizer-header {
+  background: linear-gradient(135deg, #003366 0%, #0047AB 100%);
+  padding: 0 50px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.header-content {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.summarizer-content {
+  padding: 40px 50px;
+  background: #f5f7fa;
+}
+
+.content-wrapper {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.main-card {
+  margin-bottom: 24px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  background: #ffffff;
+}
+
+.result-card {
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  margin-bottom: 24px;
+  background: #ffffff;
+}
+
+.info-card {
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.step-card {
+  padding: 16px;
+  background: #f8f9fb;
+  border-radius: 6px;
+  border: 1px solid #e8eaed;
+  text-align: center;
+  height: 100%;
+  transition: all 0.3s ease;
+}
+
+.step-card:hover {
+  background: #f0f2f5;
+  border-color: #0047AB;
+}
+
+.ant-upload.ant-upload-drag {
+  background: #fafbfc;
+  border: 2px dashed #d0d7de;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.ant-upload.ant-upload-drag:hover {
+  border-color: #0047AB;
+  background: #f6f8fa;
+}
+
+.ant-upload-drag-icon {
+  font-size: 64px;
+  color: #0047AB;
+}
+
+@media (max-width: 768px) {
+  .summarizer-header {
+    padding: 0 20px;
+  }
+
+  .summarizer-content {
+    padding: 20px;
+  }
+
+  .header-content {
+    flex-direction: column;
+    gap: 12px;
+  }
+}
