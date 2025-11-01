@@ -1,0 +1,2 @@
+# This file ensures the checkpoints directory is tracked by git
+# Checkpoint files are temporary and will be auto-generated during processing
