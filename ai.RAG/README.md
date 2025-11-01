@@ -65,6 +65,17 @@ cd backend
 pip install -r requirements.txt
 ```
 
+**🚀 GPU Acceleration (Optional but Recommended)**
+
+If you have an NVIDIA GPU, install GPU-accelerated PyTorch for **10-50x faster embedding generation**:
+
+```bash
+# After installing requirements.txt
+pip install -r requirements-gpu.txt
+```
+
+See [GPU_SETUP.md](backend/GPU_SETUP.md) for detailed GPU setup instructions.
+
 ### 2. Configure Environment Variables
 
 Edit `backend/.env` file:

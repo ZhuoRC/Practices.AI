@@ -1,0 +1,20 @@
+# GPU-accelerated PyTorch for CUDA 12.4
+# Install this BEFORE or AFTER requirements.txt for GPU support
+#
+# Usage:
+#   pip install -r requirements.txt
+#   pip install -r requirements-gpu.txt
+#
+# Or in one command:
+#   pip install -r requirements.txt && pip install -r requirements-gpu.txt
+
+--extra-index-url https://download.pytorch.org/whl/cu124
+torch>=2.0.0
+torchvision>=0.15.0
+torchaudio>=2.0.0
+
+# Alternative for CUDA 11.8 (if CUDA 12.4 has issues):
+# --extra-index-url https://download.pytorch.org/whl/cu118
+# torch>=2.0.0
+# torchvision>=0.15.0
+# torchaudio>=2.0.0

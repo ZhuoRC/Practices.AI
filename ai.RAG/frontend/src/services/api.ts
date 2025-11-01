@@ -13,7 +13,8 @@ export interface Document {
   document_id: string;
   filename: string;
   file_size: number;
-  upload_time: string;  // Format: yyyy-mm-dd
+  upload_time: string;  // Format: yyyy-mm-dd (for display)
+  upload_time_iso: string;  // ISO timestamp (for sorting)
   total_chunks: number;
 }
 
@@ -41,10 +42,26 @@ export interface QueryResponse {
 export interface UploadResponse {
   success: boolean;
   message: string;
-  document_id: string;
-  original_filename: string;
-  total_chunks: number;
-  file_size: number;
+  task_id: string;
+  filename: string;
+}
+
+export interface TaskStatus {
+  task_id: string;
+  task_type: string;
+  filename: string;
+  status: 'pending' | 'processing' | 'completed' | 'failed';
+  progress: number;
+  message: string;
+  created_at: string;
+  updated_at: string;
+  result?: {
+    document_id: string;
+    original_filename: string;
+    total_chunks: number;
+    file_size: number;
+  };
+  error?: string;
 }
 
 export const documentAPI = {
@@ -71,6 +88,23 @@ export const documentAPI = {
   // Delete document
   deleteDocument: async (documentId: string): Promise<void> => {
     await api.delete(`/api/documents/${documentId}`);
+  },
+
+  // Get task status
+  getTaskStatus: async (taskId: string): Promise<TaskStatus> => {
+    const response = await api.get(`/api/documents/tasks/${taskId}`);
+    return response.data;
+  },
+
+  // List all tasks
+  listTasks: async (): Promise<TaskStatus[]> => {
+    const response = await api.get('/api/documents/tasks');
+    return response.data.tasks;
+  },
+
+  // Delete task
+  deleteTask: async (taskId: string): Promise<void> => {
+    await api.delete(`/api/documents/tasks/${taskId}`);
   },
 };
 

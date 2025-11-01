@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
-import { Layout, Typography, Row, Col, Divider, Button } from 'antd';
+import { Layout, Typography, Row, Col, Button } from 'antd';
 import { BookOutlined, ApiOutlined } from '@ant-design/icons';
-import FileUpload from './components/FileUpload';
 import DocumentList from './components/DocumentList';
 import ChatInterface from './components/ChatInterface';
 import { API_BASE_URL } from './services/api';
@@ -11,14 +10,8 @@ const { Header, Content } = Layout;
 const { Title } = Typography;
 
 const App: React.FC = () => {
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [selectedDocIds, setSelectedDocIds] = useState<string[]>([]);
   const swaggerUrl = `${API_BASE_URL}/docs`;
-
-  const handleUploadSuccess = () => {
-    // Trigger document list refresh
-    setRefreshTrigger((prev) => prev + 1);
-  };
 
   const handleDocSelectionChange = (docIds: string[]) => {
     setSelectedDocIds(docIds);
@@ -48,11 +41,9 @@ const App: React.FC = () => {
 
       <Content style={{ padding: '24px', background: '#f0f2f5' }}>
         <Row gutter={[16, 16]} style={{ height: '100%' }}>
-          {/* Left Column: Upload and Document List */}
+          {/* Left Column: Document List */}
           <Col xs={24} lg={10}>
-            <FileUpload onUploadSuccess={handleUploadSuccess} />
             <DocumentList
-              refreshTrigger={refreshTrigger}
               selectedDocIds={selectedDocIds}
               onSelectionChange={handleDocSelectionChange}
             />

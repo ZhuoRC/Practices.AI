@@ -34,6 +34,8 @@ class Settings(BaseSettings):
         default="sentence-transformers/all-MiniLM-L6-v2",
         env="EMBEDDING_MODEL"
     )
+    embedding_batch_size_cpu: int = Field(default=16, env="EMBEDDING_BATCH_SIZE_CPU")
+    embedding_batch_size_gpu: int = Field(default=32, env="EMBEDDING_BATCH_SIZE_GPU")
 
     # Text Chunking
     chunk_size: int = Field(default=500, env="CHUNK_SIZE")
