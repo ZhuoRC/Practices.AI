@@ -126,10 +126,10 @@ const DocumentList: React.FC<DocumentListProps> = ({
       return false;
     }
 
-    // Validate file size (50MB max)
-    const maxSize = 50 * 1024 * 1024;
+    // Validate file size (100MB max)
+    const maxSize = 100 * 1024 * 1024;
     if (file.size > maxSize) {
-      message.error('File size cannot exceed 50MB!');
+      message.error('File size cannot exceed 100MB!');
       return false;
     }
 
@@ -501,7 +501,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
             </p>
             <p className="ant-upload-text">Click or drag PDF file to this area to upload</p>
             <p className="ant-upload-hint">
-              Supports single file upload, maximum 50MB
+              Supports single file upload, maximum 100MB
             </p>
           </Dragger>
 
