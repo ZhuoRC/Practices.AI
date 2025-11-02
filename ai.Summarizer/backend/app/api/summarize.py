@@ -6,11 +6,7 @@ from pathlib import Path
 import shutil
 import asyncio
 import time
-from ..services.summarizer import get_summarizer
-from ..services.storage import get_storage
-from ..services.task_queue import task_queue, TaskStatus
-from ..services.audio_video_loader import AudioVideoLoader
-from ..services.transcription_manager import TranscriptionManager
+from ..services import get_summarizer, get_storage, task_queue, TaskStatus, AudioVideoLoader, TranscriptionManager
 from ..config import settings
 
 router = APIRouter(prefix="/api/summarize", tags=["summarize"])
