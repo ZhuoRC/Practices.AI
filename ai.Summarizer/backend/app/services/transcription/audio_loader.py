@@ -136,6 +136,61 @@ class AudioVideoLoader:
             AudioVideoLoader._safe_delete_temp_file(temp_audio_path)
 
     @staticmethod
+    def convert_audio_to_format(audio_bytes: bytes, file_extension: str, target_format: str) -> bytes:
+        """
+        Convert audio file to specified format.
+
+        Args:
+            audio_bytes: Raw audio file bytes
+            file_extension: Original file extension (e.g., '.mp3', '.m4a')
+            target_format: Target format (without dot, e.g., 'wav', 'mp3')
+
+        Returns:
+            Audio data in target format
+
+        Raises:
+            Exception: If conversion fails
+        """
+        temp_input_path = None
+        temp_output_path = None
+
+        try:
+            # Create temporary input file
+            with tempfile.NamedTemporaryFile(
+                suffix=file_extension,
+                delete=False
+            ) as temp_input:
+                temp_input_path = Path(temp_input.name)
+                temp_input.write(audio_bytes)
+
+            logger.info(f"Converting audio format: {file_extension} -> {target_format}")
+
+            # Load audio file using pydub
+            format_name = file_extension[1:] if file_extension.startswith('.') else file_extension
+            audio = AudioSegment.from_file(str(temp_input_path), format=format_name)
+
+            # Export as target format
+            temp_output_path = temp_input_path.with_suffix(f'.{target_format}')
+            audio.export(str(temp_output_path), format=target_format)
+
+            # Read output bytes
+            with open(temp_output_path, 'rb') as output_file:
+                output_bytes = output_file.read()
+
+            logger.info(f"Audio converted successfully: {len(output_bytes)} bytes")
+
+            return output_bytes
+
+        except Exception as e:
+            logger.error(f"Failed to convert audio format: {str(e)}")
+            raise Exception(f"Audio conversion failed: {str(e)}")
+
+        finally:
+            # Clean up temporary files (with retry logic for Windows)
+            AudioVideoLoader._safe_delete_temp_file(temp_input_path)
+            AudioVideoLoader._safe_delete_temp_file(temp_output_path)
+
+    @staticmethod
     def convert_audio_to_wav(audio_bytes: bytes, file_extension: str) -> bytes:
         """
         Convert audio file to WAV format for consistent processing.
@@ -199,6 +254,9 @@ class AudioVideoLoader:
         """
         Prepare audio/video file for transcription.
 
+        Video files: Always extract audio to WAV format
+        Audio files: Use native format if supported, otherwise convert to WAV
+
         Args:
             file_bytes: Raw file bytes
             filename: Original filename
@@ -211,19 +269,14 @@ class AudioVideoLoader:
         """
         file_extension = Path(filename).suffix.lower()
 
-        # Whisper natively supports these formats - no conversion needed
-        WHISPER_NATIVE_FORMATS = {'.mp3', '.wav', '.m4a', '.mp4', '.mpeg', '.mpga', '.webm'}
+        # Audio formats natively supported by transcription services
+        AUDIO_NATIVE_FORMATS = {'.mp3', '.wav', '.m4a', '.mpeg', '.mpga'}
 
-        # Handle video files - extract audio
+        # Handle video files - always extract audio to WAV
         if cls.is_video_file(filename):
-            logger.info(f"Processing video file: {filename}")
-
-            # If video format is natively supported by Whisper, use it directly
-            if file_extension in WHISPER_NATIVE_FORMATS:
-                logger.info(f"Video format {file_extension} is natively supported by Whisper, skipping conversion")
-                return file_bytes, file_extension
-
-            # Otherwise extract audio
+            logger.info(f"Processing video file: {filename} - extracting audio to WAV")
+            # Always extract audio from video files to WAV format
+            # Video containers (mp4, avi, etc.) cannot be sent to transcription APIs
             audio_bytes = cls.extract_audio_from_video(file_bytes, file_extension)
             return audio_bytes, '.wav'
 
@@ -231,12 +284,12 @@ class AudioVideoLoader:
         elif cls.is_audio_file(filename):
             logger.info(f"Processing audio file: {filename}")
 
-            # If format is natively supported by Whisper, use it directly
-            if file_extension in WHISPER_NATIVE_FORMATS:
-                logger.info(f"Audio format {file_extension} is natively supported by Whisper, skipping conversion")
+            # If format is natively supported, use it directly
+            if file_extension in AUDIO_NATIVE_FORMATS:
+                logger.info(f"Audio format {file_extension} is natively supported, using directly")
                 return file_bytes, file_extension
 
-            # For other formats, try to convert (requires ffmpeg)
+            # For other formats, convert to WAV
             try:
                 audio_bytes = cls.convert_audio_to_wav(file_bytes, file_extension)
                 return audio_bytes, '.wav'

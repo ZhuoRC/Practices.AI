@@ -273,7 +273,7 @@ async def process_document_background(
                 progress_percent=30
             )
 
-            # Prepare audio for transcription
+            # Prepare audio for transcription (extract from video if needed)
             audio_bytes, audio_ext = AudioVideoLoader.prepare_audio_for_transcription(
                 content, filename
             )
@@ -508,7 +508,7 @@ async def transcribe_audio_background(
             progress_percent=40
         )
 
-        # Prepare audio for transcription
+        # Prepare audio for transcription (extract from video if needed)
         audio_bytes, audio_ext = AudioVideoLoader.prepare_audio_for_transcription(
             content, filename
         )
