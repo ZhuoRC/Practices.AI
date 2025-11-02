@@ -1,0 +1,6 @@
+# Ignore all files in data directories except index files
+*
+!.gitignore
+!.gitkeep
+!*/
+!index.json
