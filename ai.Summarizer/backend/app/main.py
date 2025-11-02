@@ -1,7 +1,37 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from .api import summarize
-from .config import settings
+from contextlib import asynccontextmanager
+try:
+    from .api import summarize
+    from .config import settings
+except ImportError:
+    # Fallback to absolute imports for direct execution
+    from app.api import summarize
+    from app.config import settings
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Lifespan event handler"""
+    # Startup
+    print("=" * 60)
+    print("Document Summarizer API Starting...")
+    print("=" * 60)
+    print(f"LLM Provider: {settings.llm_provider.upper()}")
+    if settings.llm_provider.lower() == "local":
+        print(f"  Local Ollama URL: {settings.ollama_base_url}")
+        print(f"  Local Model: {settings.ollama_model}")
+    elif settings.llm_provider.lower() == "cloud":
+        print(f"  Cloud API URL: {settings.qwen_api_base_url}")
+        print(f"  Cloud Model: {settings.qwen_model}")
+    print(f"Chunking: {settings.min_chunk_size}-{settings.max_chunk_size} chars")
+    print(f"Document Storage: {settings.document_storage_path}")
+    print("=" * 60)
+
+    yield
+
+    # Shutdown
+    print("Document Summarizer API Shutting down...")
+
 
 # Create FastAPI app
 app = FastAPI(
@@ -32,6 +62,7 @@ This API provides intelligent document summarization using a Map-Reduce approach
 3. Check system health at `/api/summarize/health`
     """,
     version="1.0.0",
+    lifespan=lifespan,
     openapi_tags=[
         {
             "name": "summarize",
@@ -64,28 +95,6 @@ async def root():
     }
 
 
-@app.on_event("startup")
-async def startup_event():
-    """Startup event handler"""
-    print("=" * 60)
-    print("Document Summarizer API Starting...")
-    print("=" * 60)
-    print(f"LLM Provider: {settings.llm_provider.upper()}")
-    if settings.llm_provider.lower() == "local":
-        print(f"  Local Ollama URL: {settings.ollama_base_url}")
-        print(f"  Local Model: {settings.ollama_model}")
-    elif settings.llm_provider.lower() == "cloud":
-        print(f"  Cloud API URL: {settings.qwen_api_base_url}")
-        print(f"  Cloud Model: {settings.qwen_model}")
-    print(f"Chunking: {settings.min_chunk_size}-{settings.max_chunk_size} chars")
-    print(f"Document Storage: {settings.document_storage_path}")
-    print("=" * 60)
-
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    """Shutdown event handler"""
-    print("Document Summarizer API Shutting down...")
 
 
 if __name__ == "__main__":

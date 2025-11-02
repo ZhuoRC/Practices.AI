@@ -33,6 +33,11 @@ class Settings(BaseSettings):
     max_chunk_size: int = Field(default=1200, env="MAX_CHUNK_SIZE")
     chunk_overlap: int = Field(default=100, env="CHUNK_OVERLAP")
 
+    # Audio/Video Transcription Configuration
+    whisper_model: str = Field(default="base", env="WHISPER_MODEL")
+    max_audio_file_size: int = Field(default=100_000_000, env="MAX_AUDIO_FILE_SIZE")  # 100 MB
+    max_audio_duration: int = Field(default=3600, env="MAX_AUDIO_DURATION")  # 1 hour in seconds
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"

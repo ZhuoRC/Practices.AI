@@ -16,3 +16,9 @@ lxml==4.9.3
 # Text processing
 jieba==0.42.1
 langdetect==1.0.9
+
+# Audio/Video processing
+openai-whisper
+pydub
+moviepy
+ffmpeg-python

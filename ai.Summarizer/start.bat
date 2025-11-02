@@ -61,13 +61,10 @@ echo.
 cd ..\backend
 start "AI Summarizer - Backend" cmd /k "venv\Scripts\activate.bat && python -m app.main"
 
-:: Wait a bit for backend to start
-timeout /t 3 /nobreak >nul
-
 :: Start frontend in new window
 cd ..\frontend
 start "AI Summarizer - Frontend" cmd /k "npm run dev"
 
 echo Services started in separate windows!
 echo Close this window or press any key to exit...
-pause >nul
+
