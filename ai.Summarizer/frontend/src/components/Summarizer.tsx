@@ -3,44 +3,32 @@ import {
   Layout,
   Card,
   Tabs,
-  Upload,
-  Input,
-  InputNumber,
-  Button,
   Typography,
   Space,
-  Alert,
-  Spin,
   Statistic,
   Row,
   Col,
   message,
   Tag,
-  Progress,
-  Steps,
-  Select,
+  Button,
+  Input,
 } from 'antd'
 import {
   FileTextOutlined,
   GlobalOutlined,
-  CloudUploadOutlined,
   ThunderboltOutlined,
   ClockCircleOutlined,
   SplitCellsOutlined,
   CheckCircleOutlined,
-  ApiOutlined,
   DownloadOutlined,
 } from '@ant-design/icons'
-import type { UploadFile } from 'antd'
 import {
-  summarizeDocumentEnhanced,
-  summarizeWebpage,
   checkHealth,
   downloadSummary,
-  isAudioVideoFile,
-  transcribeAudio,
-  type TaskResult
 } from '../services/api'
+import { DocumentSummarizer } from './DocumentSummarizer'
+import { WebpageSummarizer } from './WebpageSummarizer'
+import { TranscriptionResult } from './TranscriptionResult'
 import './Summarizer.css'
 
 const { Header, Content } = Layout
@@ -54,21 +42,17 @@ interface SummaryResult {
   processing_time: number
   source_type: string
   source_name?: string
+  token_usage?: {
+    total_tokens: number
+    prompt_tokens: number
+    completion_tokens: number
+  }
 }
 
 function Summarizer() {
   const [activeTab, setActiveTab] = useState<string>('document')
-  const [fileList, setFileList] = useState<UploadFile[]>([])
-  const [url, setUrl] = useState<string>('')
   const [summaryLength, setSummaryLength] = useState<number>(500)
-  const [loading, setLoading] = useState<boolean>(false)
   const [result, setResult] = useState<SummaryResult | null>(null)
-  const [error, setError] = useState<string>('')
-  const [progressMessage, setProgressMessage] = useState<string>('')
-  const [isAsyncProcessing, setIsAsyncProcessing] = useState<boolean>(false)
-  const [transcriptionText, setTranscriptionText] = useState<string>('')
-  const [isTranscribing, setIsTranscribing] = useState<boolean>(false)
-  const [language, setLanguage] = useState<string | undefined>(undefined)
   const [healthStatus, setHealthStatus] = useState<{
     status: string
     llm_provider: string
@@ -88,130 +72,13 @@ function Summarizer() {
     }
   }
 
-  const handleDocumentUpload = async () => {
-    if (fileList.length === 0) {
-      message.warning('Please select a file first')
-      return
-    }
-
-    setLoading(true)
-    setError('')
-    setResult(null)
-    setProgressMessage('')
-
-    try {
-      const file = fileList[0].originFileObj as File
-
-      // Check if it's an audio/video file
-      const isAsync = isAudioVideoFile(file.name)
-      setIsAsyncProcessing(isAsync)
-
-      if (isAsync) {
-        message.info('Audio/video file detected. Processing may take several minutes...')
-      }
-
-      // Use enhanced API with progress callback
-      const data = await summarizeDocumentEnhanced(
-        file,
-        summaryLength,
-        (task: TaskResult) => {
-          // Update progress message
-          if (task.progress) {
-            setProgressMessage(task.progress)
-          }
-        }
-      )
-
-      setResult(data)
-      message.success('Summary generated successfully!')
-    } catch (err: any) {
-      const errorMsg = err.response?.data?.detail || err.message || 'Failed to generate summary'
-      setError(errorMsg)
-      message.error(errorMsg)
-    } finally {
-      setLoading(false)
-      setProgressMessage('')
-      setIsAsyncProcessing(false)
-    }
+  const handleSummaryGenerated = (summaryResult: SummaryResult) => {
+    setResult(summaryResult)
   }
 
-  const handleWebpageSummarize = async () => {
-    if (!url.trim()) {
-      message.warning('Please enter a URL')
-      return
-    }
-
-    setLoading(true)
-    setError('')
+  const handleClearResult = () => {
     setResult(null)
-
-    try {
-      const data = await summarizeWebpage(url, summaryLength)
-      setResult(data)
-      message.success('Summary generated successfully!')
-    } catch (err: any) {
-      const errorMsg = err.response?.data?.detail || err.message || 'Failed to generate summary'
-      setError(errorMsg)
-      message.error(errorMsg)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleFileChange = (info: any) => {
-    let newFileList = [...info.fileList]
-    newFileList = newFileList.slice(-1)
-    setFileList(newFileList)
-    setResult(null)
-    setError('')
-    setTranscriptionText('')
-  }
-
-  const handleTranscription = async () => {
-    if (fileList.length === 0) {
-      message.warning('Please select an audio/video file first')
-      return
-    }
-
-    const file = fileList[0].originFileObj as File
-
-    // Check if it's an audio/video file
-    if (!isAudioVideoFile(file.name)) {
-      message.error('Please select an audio or video file (MP3, WAV, M4A, MP4, AVI, MOV, MKV)')
-      return
-    }
-
-    setIsTranscribing(true)
-    setError('')
-    setTranscriptionText('')
-    setProgressMessage('')
-    setResult(null)
-
-    try {
-      message.info('Starting transcription. This may take a few minutes...')
-
-      // Transcribe audio
-      const transcription = await transcribeAudio(
-        file,
-        (task: TaskResult) => {
-          // Update progress message
-          if (task.progress) {
-            setProgressMessage(task.progress)
-          }
-        },
-        language
-      )
-
-      setTranscriptionText(transcription)
-      message.success('Transcription completed successfully!')
-    } catch (err: any) {
-      const errorMsg = err.response?.data?.detail || err.message || 'Failed to transcribe audio'
-      setError(errorMsg)
-      message.error(errorMsg)
-    } finally {
-      setIsTranscribing(false)
-      setProgressMessage('')
-    }
+    message.info('Summary cleared')
   }
 
   return (
@@ -249,107 +116,11 @@ function Summarizer() {
                 }
                 key="document"
               >
-                <Space direction="vertical" size="large" style={{ width: '100%' }}>
-                  <Alert
-                    message="Supported Formats"
-                    description="Documents: PDF, DOCX, TXT, Markdown | Audio: MP3, WAV, M4A | Video: MP4, AVI, MOV, MKV"
-                    type="info"
-                    showIcon
-                  />
-
-                  <Upload.Dragger
-                    fileList={fileList}
-                    onChange={handleFileChange}
-                    beforeUpload={() => false}
-                    accept=".pdf,.docx,.txt,.md,.mp3,.wav,.m4a,.mp4,.avi,.mov,.mkv"
-                    maxCount={1}
-                  >
-                    <p className="ant-upload-drag-icon">
-                      <CloudUploadOutlined />
-                    </p>
-                    <p className="ant-upload-text">
-                      Click or drag file to this area to upload
-                    </p>
-                    <p className="ant-upload-hint">
-                      Support for documents (PDF, DOCX, TXT, MD), audio (MP3, WAV, M4A), and video (MP4, AVI, MOV, MKV)
-                    </p>
-                  </Upload.Dragger>
-
-                  <div>
-                    <Text strong>Summary Length (characters):</Text>
-                    <InputNumber
-                      min={100}
-                      max={8000}
-                      step={100}
-                      value={summaryLength}
-                      onChange={(value) => setSummaryLength(value || 500)}
-                      style={{ width: '100%', marginTop: '8px' }}
-                      size="large"
-                    />
-                    <Text type="secondary" style={{ fontSize: '12px' }}>
-                      Recommended: 500 for quick, 1000-2000 for detailed, 5000-8000 for comprehensive (max: 8000)
-                    </Text>
-                  </div>
-
-                  {fileList.length > 0 && isAudioVideoFile(fileList[0]?.name || '') && (
-                    <div>
-                      <Text strong>Language (for audio/video transcription):</Text>
-                      <Select
-                        size="large"
-                        placeholder="Auto-detect language"
-                        value={language}
-                        onChange={(value) => setLanguage(value)}
-                        style={{ width: '100%', marginTop: '8px' }}
-                        allowClear
-                        options={[
-                          { value: 'zh', label: 'Chinese (中文)' },
-                          { value: 'en', label: 'English' },
-                          { value: 'ja', label: 'Japanese (日本語)' },
-                          { value: 'ko', label: 'Korean (한국어)' },
-                          { value: 'es', label: 'Spanish (Español)' },
-                          { value: 'fr', label: 'French (Français)' },
-                          { value: 'de', label: 'German (Deutsch)' },
-                          { value: 'ru', label: 'Russian (Русский)' },
-                          { value: 'ar', label: 'Arabic (العربية)' },
-                          { value: 'pt', label: 'Portuguese (Português)' },
-                        ]}
-                      />
-                      <Text type="secondary" style={{ fontSize: '12px' }}>
-                        Specifying the language can significantly improve transcription accuracy. Leave blank for auto-detection.
-                      </Text>
-                    </div>
-                  )}
-
-                  <Row gutter={16}>
-                    <Col span={12}>
-                      <Button
-                        type="primary"
-                        size="large"
-                        block
-                        onClick={handleDocumentUpload}
-                        loading={loading}
-                        disabled={fileList.length === 0 || isTranscribing}
-                        icon={<ThunderboltOutlined />}
-                      >
-                        Generate Summary
-                      </Button>
-                    </Col>
-                    <Col span={12}>
-                      <Button
-                        type="default"
-                        size="large"
-                        block
-                        onClick={handleTranscription}
-                        loading={isTranscribing}
-                        disabled={fileList.length === 0 || loading || !isAudioVideoFile(fileList[0]?.name || '')}
-                        icon={<ApiOutlined />}
-                        style={{ borderColor: '#1890ff', color: '#1890ff' }}
-                      >
-                        Speech Recognition
-                      </Button>
-                    </Col>
-                  </Row>
-                </Space>
+                <DocumentSummarizer
+                  onSummaryGenerated={handleSummaryGenerated}
+                  summaryLength={summaryLength}
+                  onSummaryLengthChange={setSummaryLength}
+                />
               </TabPane>
 
               <TabPane
@@ -361,221 +132,30 @@ function Summarizer() {
                 }
                 key="webpage"
               >
-                <Space direction="vertical" size="large" style={{ width: '100%' }}>
-                  <Alert
-                    message="Web Content Extraction"
-                    description="Enter a URL to extract and summarize webpage content"
-                    type="info"
-                    showIcon
-                  />
-
-                  <Input
-                    size="large"
-                    placeholder="https://example.com/article"
-                    value={url}
-                    onChange={(e) => setUrl(e.target.value)}
-                    prefix={<GlobalOutlined />}
-                    onPressEnter={handleWebpageSummarize}
-                  />
-
-                  <div>
-                    <Text strong>Summary Length (characters):</Text>
-                    <InputNumber
-                      min={100}
-                      max={8000}
-                      step={100}
-                      value={summaryLength}
-                      onChange={(value) => setSummaryLength(value || 500)}
-                      style={{ width: '100%', marginTop: '8px' }}
-                      size="large"
-                    />
-                    <Text type="secondary" style={{ fontSize: '12px' }}>
-                      Recommended: 500 for quick, 1000-2000 for detailed, 5000-8000 for comprehensive (max: 8000)
-                    </Text>
-                  </div>
-
-                  <Button
-                    type="primary"
-                    size="large"
-                    block
-                    onClick={handleWebpageSummarize}
-                    loading={loading}
-                    disabled={!url.trim()}
-                    icon={<ThunderboltOutlined />}
-                  >
-                    Generate Summary
-                  </Button>
-                </Space>
+                <WebpageSummarizer
+                  onSummaryGenerated={handleSummaryGenerated}
+                  summaryLength={summaryLength}
+                  onSummaryLengthChange={setSummaryLength}
+                />
               </TabPane>
             </Tabs>
           </Card>
 
-          {loading && (
-            <Card className="result-card" title="Processing...">
-              <Space direction="vertical" size="large" style={{ width: '100%' }}>
-                <div style={{ textAlign: 'center' }}>
-                  <Spin size="large" />
-                  <Paragraph style={{ marginTop: '20px', color: '#8c8c8c', fontSize: '16px' }}>
-                    {isAsyncProcessing
-                      ? 'Processing audio/video file...'
-                      : 'Processing document using Map-Reduce architecture...'}
-                  </Paragraph>
-                  {progressMessage && (
-                    <Alert
-                      message="Current Status"
-                      description={progressMessage}
-                      type="info"
-                      showIcon
-                      style={{ marginTop: '16px' }}
-                    />
-                  )}
-                </div>
-
-                <Steps
-                  current={1}
-                  items={[
-                    {
-                      title: 'Load',
-                      description: isAsyncProcessing ? 'Transcribing audio...' : 'Extract text from source',
-                      status: 'finish',
-                    },
-                    {
-                      title: 'Chunk',
-                      description: 'Split into manageable pieces',
-                      status: 'finish',
-                    },
-                    {
-                      title: 'Map',
-                      description: 'Summarizing each chunk...',
-                      status: 'process',
-                    },
-                    {
-                      title: 'Reduce',
-                      description: 'Generate final summary',
-                      status: 'wait',
-                    },
-                  ]}
-                />
-
-                <div>
-                  <Paragraph style={{ marginBottom: '8px', color: '#8c8c8c' }}>
-                    {isAsyncProcessing
-                      ? 'Audio/video transcription may take several minutes...'
-                      : 'This may take a few minutes depending on document size...'}
-                  </Paragraph>
-                  <Progress
-                    percent={50}
-                    status="active"
-                    strokeColor={{
-                      '0%': '#108ee9',
-                      '100%': '#87d068',
-                    }}
-                  />
-                </div>
-
-                <Alert
-                  message={isAsyncProcessing ? "Audio/Video Processing" : "Performance Tip"}
-                  description={
-                    isAsyncProcessing
-                      ? "The audio/video file is being transcribed using OpenAI Whisper. After transcription, the text will be summarized using the Map-Reduce architecture."
-                      : "Larger documents are automatically split into optimal chunk sizes (2000-3000 characters) to balance speed and quality. Each chunk is processed sequentially for best accuracy."
-                  }
-                  type="info"
-                  showIcon
-                />
-              </Space>
-            </Card>
-          )}
-
-          {error && (
-            <Card className="result-card">
-              <Alert message="Error" description={error} type="error" showIcon />
-            </Card>
-          )}
-
-          {isTranscribing && (
-            <Card className="result-card" title="Transcribing...">
-              <Space direction="vertical" size="large" style={{ width: '100%' }}>
-                <div style={{ textAlign: 'center' }}>
-                  <Spin size="large" />
-                  <Paragraph style={{ marginTop: '20px', color: '#8c8c8c', fontSize: '16px' }}>
-                    Transcribing audio to text using Whisper...
-                  </Paragraph>
-                  {progressMessage && (
-                    <Alert
-                      message="Current Status"
-                      description={progressMessage}
-                      type="info"
-                      showIcon
-                      style={{ marginTop: '16px' }}
-                    />
-                  )}
-                </div>
-                <Progress
-                  percent={50}
-                  status="active"
-                  strokeColor={{
-                    '0%': '#108ee9',
-                    '100%': '#87d068',
-                  }}
-                />
-              </Space>
-            </Card>
-          )}
-
-          {transcriptionText && !isTranscribing && (
+          {/* Summary Result */}
+          {result && (
             <Card
               className="result-card"
-              title="Transcription Result"
+              title="Summary Result"
               extra={
                 <Button
-                  type="primary"
-                  icon={<DownloadOutlined />}
-                  onClick={() => {
-                    const blob = new Blob([transcriptionText], { type: 'text/plain;charset=utf-8' })
-                    const url = URL.createObjectURL(blob)
-                    const link = document.createElement('a')
-                    link.href = url
-                    link.download = `transcription_${Date.now()}.txt`
-                    document.body.appendChild(link)
-                    link.click()
-                    document.body.removeChild(link)
-                    URL.revokeObjectURL(url)
-                  }}
+                  type="default"
+                  onClick={handleClearResult}
+                  size="small"
                 >
-                  Download
+                  Clear
                 </Button>
               }
             >
-              <Space direction="vertical" size="large" style={{ width: '100%' }}>
-                <Alert
-                  message="Full Transcription"
-                  description={`${transcriptionText.length} characters transcribed`}
-                  type="success"
-                  showIcon
-                />
-
-                <div>
-                  <Text strong style={{ fontSize: '16px', marginBottom: '8px', display: 'block' }}>
-                    Transcribed Text:
-                  </Text>
-                  <TextArea
-                    value={transcriptionText}
-                    readOnly
-                    autoSize={{ minRows: 10, maxRows: 30 }}
-                    style={{
-                      fontSize: '14px',
-                      lineHeight: '1.8',
-                      whiteSpace: 'pre-wrap'
-                    }}
-                  />
-                </div>
-              </Space>
-            </Card>
-          )}
-
-          {result && !loading && (
-            <Card className="result-card" title="Summary Result">
               <Space direction="vertical" size="large" style={{ width: '100%' }}>
                 <Row gutter={16}>
                   <Col span={8}>

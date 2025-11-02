@@ -14,6 +14,10 @@ class Settings(BaseSettings):
         default="https://dashscope.aliyuncs.com/compatible-mode/v1",
         env="QWEN_API_BASE_URL"
     )
+    qwen_asr_api_base_url: str = Field(
+        default="https://dashscope.aliyuncs.com",
+        env="QWEN_ASR_API_BASE_URL"
+    )
     qwen_api_key: str = Field(default="", env="QWEN_API_KEY")
     qwen_model: str = Field(default="qwen-turbo", env="QWEN_MODEL")
 
@@ -34,7 +38,11 @@ class Settings(BaseSettings):
     chunk_overlap: int = Field(default=100, env="CHUNK_OVERLAP")
 
     # Audio/Video Transcription Configuration
+    transcription_provider: str = Field(default="local", env="TRANSCRIPTION_PROVIDER")  # local, cloud
     whisper_model: str = Field(default="base", env="WHISPER_MODEL")
+    whisper_device: str = Field(default="auto", env="WHISPER_DEVICE")  # auto, cpu, cuda
+    whisper_precision: str = Field(default="auto", env="WHISPER_PRECISION")  # auto, fp16, fp32
+    qwen_asr_model: str = Field(default="qwen3-asr-flash", env="QWEN_ASR_MODEL")
     max_audio_file_size: int = Field(default=100_000_000, env="MAX_AUDIO_FILE_SIZE")  # 100 MB
     max_audio_duration: int = Field(default=3600, env="MAX_AUDIO_DURATION")  # 1 hour in seconds
 

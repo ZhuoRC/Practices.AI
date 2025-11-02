@@ -35,6 +35,7 @@ class TaskResult:
 
     # Optional fields
     progress: Optional[str] = None
+    progress_percent: Optional[int] = None  # Progress percentage (0-100)
     error: Optional[str] = None
 
     # Result fields (populated on completion)
@@ -118,6 +119,7 @@ class TaskQueue:
         task_id: str,
         status: TaskStatus,
         progress: Optional[str] = None,
+        progress_percent: Optional[int] = None,
         error: Optional[str] = None
     ) -> None:
         """
@@ -127,6 +129,7 @@ class TaskQueue:
             task_id: Task ID
             status: New status
             progress: Optional progress message
+            progress_percent: Optional progress percentage (0-100)
             error: Optional error message
         """
         async with self._lock:
@@ -137,6 +140,8 @@ class TaskQueue:
 
                 if progress is not None:
                     task.progress = progress
+                if progress_percent is not None:
+                    task.progress_percent = progress_percent
                 if error is not None:
                     task.error = error
 

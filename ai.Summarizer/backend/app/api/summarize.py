@@ -10,7 +10,7 @@ from ..services.summarizer import get_summarizer
 from ..services.storage import get_storage
 from ..services.task_queue import task_queue, TaskStatus
 from ..services.audio_video_loader import AudioVideoLoader
-from ..services.transcription import TranscriptionService
+from ..services.transcription_manager import TranscriptionManager
 from ..config import settings
 
 router = APIRouter(prefix="/api/summarize", tags=["summarize"])
@@ -261,7 +261,8 @@ async def process_document_background(
         await task_queue.update_task_status(
             task_id,
             TaskStatus.PROCESSING,
-            progress="Processing file..."
+            progress="Processing file...",
+            progress_percent=10
         )
 
         # Check if it's an audio/video file
@@ -272,7 +273,8 @@ async def process_document_background(
             await task_queue.update_task_status(
                 task_id,
                 TaskStatus.PROCESSING,
-                progress="Transcribing audio..."
+                progress="Transcribing audio...",
+                progress_percent=30
             )
 
             # Prepare audio for transcription
@@ -280,10 +282,19 @@ async def process_document_background(
                 content, filename
             )
 
-            # Transcribe audio
-            transcription_service = TranscriptionService(model_name=settings.whisper_model)
-            transcription_result = await transcription_service.transcribe_async(
-                audio_bytes, file_extension=audio_ext
+            # Transcribe audio using transcription manager
+            transcription_manager = TranscriptionManager()
+            # Transcribe audio with progress callback
+            async def transcription_progress_callback(message: str, percent: int):
+                await task_queue.update_task_status(
+                    task_id,
+                    TaskStatus.PROCESSING,
+                    progress=message,
+                    progress_percent=percent
+                )
+
+            transcription_result = await transcription_manager.transcribe_async(
+                audio_bytes, language=None, file_extension=audio_ext, progress_callback=transcription_progress_callback
             )
 
             # Use transcribed text as document content
@@ -293,7 +304,8 @@ async def process_document_background(
             await task_queue.update_task_status(
                 task_id,
                 TaskStatus.PROCESSING,
-                progress=f"Transcription complete ({len(text_content)} chars). Summarizing..."
+                progress=f"Transcription complete ({len(text_content)} chars). Summarizing...",
+                progress_percent=70
             )
 
             # Summarize transcribed text
@@ -314,7 +326,8 @@ async def process_document_background(
             await task_queue.update_task_status(
                 task_id,
                 TaskStatus.PROCESSING,
-                progress="Extracting text from document..."
+                progress="Extracting text from document...",
+                progress_percent=20
             )
 
             summarizer = get_summarizer()
@@ -481,7 +494,8 @@ async def transcribe_audio_background(
         await task_queue.update_task_status(
             task_id,
             TaskStatus.PROCESSING,
-            progress="Preparing audio for transcription..."
+            progress="Preparing audio for transcription...",
+            progress_percent=10
         )
 
         # Check if it's an audio/video file
@@ -494,7 +508,8 @@ async def transcribe_audio_background(
         await task_queue.update_task_status(
             task_id,
             TaskStatus.PROCESSING,
-            progress="Transcribing audio..."
+            progress="Transcribing audio...",
+            progress_percent=40
         )
 
         # Prepare audio for transcription
@@ -505,10 +520,19 @@ async def transcribe_audio_background(
         # Get audio duration
         duration = AudioVideoLoader.get_audio_duration(audio_bytes, audio_ext)
 
-        # Transcribe audio
-        transcription_service = TranscriptionService(model_name=settings.whisper_model)
-        transcription_result = await transcription_service.transcribe_async(
-            audio_bytes, language=language, file_extension=audio_ext
+        # Transcribe audio using transcription manager
+        transcription_manager = TranscriptionManager()
+        # Transcribe audio with progress callback
+        async def transcription_progress_callback(message: str, percent: int):
+            await task_queue.update_task_status(
+                task_id,
+                TaskStatus.PROCESSING,
+                progress=message,
+                progress_percent=percent
+            )
+
+        transcription_result = await transcription_manager.transcribe_async(
+            audio_bytes, language=language, file_extension=audio_ext, progress_callback=transcription_progress_callback
         )
 
         # Use transcribed text
@@ -518,7 +542,8 @@ async def transcribe_audio_background(
         await task_queue.update_task_status(
             task_id,
             TaskStatus.PROCESSING,
-            progress=f"Transcription complete ({len(transcription_text)} characters)"
+            progress=f"Transcription complete ({len(transcription_text)} characters)",
+            progress_percent=90
         )
 
         # Calculate processing time
@@ -612,3 +637,56 @@ async def transcribe_audio_async(
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to start transcription: {str(e)}")
+
+
+# Pydantic models for API requests
+from pydantic import BaseModel
+
+class SwitchProviderRequest(BaseModel):
+    provider: str  # "local" or "cloud"
+
+
+# Dependency to get transcription manager
+def get_transcription_manager():
+    return TranscriptionManager()
+
+
+@router.get("/transcription-status")
+async def get_transcription_status():
+    """Get current transcription provider status."""
+    try:
+        manager = get_transcription_manager()
+        provider_info = manager.get_provider_info()
+
+        return {
+            "success": True,
+            "message": "Transcription status retrieved successfully",
+            "provider_info": provider_info
+        }
+    except Exception as e:
+        logger.error(f"Failed to get transcription status: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to get transcription status: {str(e)}")
+
+
+@router.post("/switch-transcription-provider")
+async def switch_transcription_provider(request: SwitchProviderRequest):
+    """Switch transcription provider between local and cloud."""
+    try:
+        manager = get_transcription_manager()
+
+        # Validate provider
+        if request.provider not in ["local", "cloud"]:
+            raise HTTPException(status_code=400, detail="Provider must be 'local' or 'cloud'")
+
+        # Switch provider
+        manager.switch_provider(request.provider)
+        provider_info = manager.get_provider_info()
+
+        return {
+            "success": True,
+            "message": f"Switched to {request.provider} transcription provider successfully",
+            "provider_info": provider_info
+        }
+    except Exception as e:
+        logger.error(f"Failed to switch transcription provider: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to switch transcription provider: {str(e)}")
