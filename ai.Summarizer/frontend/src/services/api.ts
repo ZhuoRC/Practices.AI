@@ -222,6 +222,7 @@ export interface TaskResult {
   filename: string
   file_size: number
   progress?: string
+  progress_percent?: number  // Progress percentage (0-100)
   error?: string
   summary?: string
   chunk_count?: number
@@ -310,12 +311,9 @@ export const summarizeDocumentEnhanced = async (
 }
 
 // Submit audio/video for transcription only (no summarization)
-export const submitTranscriptionAsync = async (file: File, language?: string): Promise<AsyncTaskResponse> => {
+export const submitTranscriptionAsync = async (file: File): Promise<AsyncTaskResponse> => {
   const formData = new FormData()
   formData.append('file', file)
-  if (language) {
-    formData.append('language', language)
-  }
 
   const response = await api.post<AsyncTaskResponse>(
     '/api/summarize/transcribe/async',
@@ -333,14 +331,18 @@ export const submitTranscriptionAsync = async (file: File, language?: string): P
 // Transcribe audio/video to text (full transcription, no summary)
 export const transcribeAudio = async (
   file: File,
-  onProgress?: (task: TaskResult) => void,
-  language?: string
+  onProgress?: (task: TaskResult) => void
 ): Promise<string> => {
-  // Submit for transcription
-  const asyncResponse = await submitTranscriptionAsync(file, language)
+  // Submit for transcription (auto-detect language)
+  const asyncResponse = await submitTranscriptionAsync(file, undefined)
 
-  // Poll until completion
-  const taskResult = await pollUntilComplete(asyncResponse.task_id, onProgress)
+  // Poll until completion with more frequent updates for transcription
+  const taskResult = await pollUntilComplete(
+    asyncResponse.task_id,
+    onProgress,
+    1000, // Poll every 1 second for transcription (more frequent)
+    1800 // 30 minutes max for long audio files
+  )
 
   // Return full transcription text
   return taskResult.summary || ''

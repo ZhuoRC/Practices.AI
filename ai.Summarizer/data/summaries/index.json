@@ -1,5 +1,85 @@
 [
   {
+    "id": "20251101_231608_789509",
+    "timestamp": "2025-11-01T23:16:08.789509",
+    "source_type": "document",
+    "source_name": "我的祖国.mp4",
+    "num_chunks": 1,
+    "processing_time": 11.72,
+    "model": "qwen3-30b-a3b",
+    "provider": "cloud",
+    "token_usage": {
+      "prompt_tokens": 734,
+      "completion_tokens": 956,
+      "total_tokens": 1690
+    },
+    "original_length": 241
+  },
+  {
+    "id": "20251101_225537_906644",
+    "timestamp": "2025-11-01T22:55:37.906644",
+    "source_type": "webpage",
+    "source_name": "https://www.freecodecamp.org/news/the-ai-engineering-handbook-how-to-start-a-career-and-excel-as-an-ai-engineer/#heading-ai-engineering-in-finance",
+    "num_chunks": 60,
+    "processing_time": 125.77,
+    "model": "qwen3-30b-a3b",
+    "provider": "cloud",
+    "token_usage": {
+      "prompt_tokens": 48215,
+      "completion_tokens": 8382,
+      "total_tokens": 56597
+    },
+    "original_length": 162736
+  },
+  {
+    "id": "20251101_224812_531889",
+    "timestamp": "2025-11-01T22:48:12.531889",
+    "source_type": "webpage",
+    "source_name": "https://www.1point3acres.com/bbs/thread-1148857-1-1.html",
+    "num_chunks": 4,
+    "processing_time": 20.16,
+    "model": "qwen3-30b-a3b",
+    "provider": "cloud",
+    "token_usage": {
+      "prompt_tokens": 7485,
+      "completion_tokens": 1118,
+      "total_tokens": 8603
+    },
+    "original_length": 9994
+  },
+  {
+    "id": "20251101_223926_987729",
+    "timestamp": "2025-11-01T22:39:26.987729",
+    "source_type": "webpage",
+    "source_name": "https://www.1point3acres.com/bbs/thread-1148857-1-1.html",
+    "num_chunks": 4,
+    "processing_time": 77.83,
+    "model": "qwen3-30b-a3b",
+    "provider": "cloud",
+    "token_usage": {
+      "prompt_tokens": 7518,
+      "completion_tokens": 5618,
+      "total_tokens": 13136
+    },
+    "original_length": 10062
+  },
+  {
+    "id": "20251101_223518_766148",
+    "timestamp": "2025-11-01T22:35:18.766148",
+    "source_type": "document",
+    "source_name": "起风了.mp3",
+    "num_chunks": 1,
+    "processing_time": 8.58,
+    "model": "qwen3-30b-a3b",
+    "provider": "cloud",
+    "token_usage": {
+      "prompt_tokens": 920,
+      "completion_tokens": 642,
+      "total_tokens": 1562
+    },
+    "original_length": 500
+  },
+  {
     "id": "20251101_175328_238945",
     "timestamp": "2025-11-01T17:53:28.238945",
     "source_type": "document",
