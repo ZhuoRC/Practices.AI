@@ -12,6 +12,7 @@ import {
   Tag,
   Button,
   Input,
+  Alert,
 } from 'antd'
 import {
   FileTextOutlined,
@@ -21,6 +22,9 @@ import {
   SplitCellsOutlined,
   CheckCircleOutlined,
   DownloadOutlined,
+  SoundOutlined,
+  ApiOutlined,
+  FileAddOutlined,
 } from '@ant-design/icons'
 import {
   checkHealth,
@@ -28,7 +32,7 @@ import {
 } from '../services/api'
 import { DocumentSummarizer } from './DocumentSummarizer'
 import { WebpageSummarizer } from './WebpageSummarizer'
-import { TranscriptionResult } from './TranscriptionResult'
+import { RecognitionTab } from './RecognitionTab'
 import './Summarizer.css'
 
 const { Header, Content } = Layout
@@ -50,7 +54,8 @@ interface SummaryResult {
 }
 
 function Summarizer() {
-  const [activeTab, setActiveTab] = useState<string>('document')
+  const [activeTab, setActiveTab] = useState<string>('summary')
+  const [summarySubTab, setSummarySubTab] = useState<string>('document')
   const [summaryLength, setSummaryLength] = useState<number>(500)
   const [result, setResult] = useState<SummaryResult | null>(null)
   const [healthStatus, setHealthStatus] = useState<{
@@ -107,36 +112,62 @@ function Summarizer() {
         <div className="content-wrapper">
           <Card className="main-card">
             <Tabs activeKey={activeTab} onChange={setActiveTab} size="large">
+              {/* Summary Tab */}
               <TabPane
                 tab={
                   <span>
-                    <FileTextOutlined />
-                    Document Upload
+                    <ThunderboltOutlined />
+                    Summary
                   </span>
                 }
-                key="document"
+                key="summary"
               >
-                <DocumentSummarizer
-                  onSummaryGenerated={handleSummaryGenerated}
-                  summaryLength={summaryLength}
-                  onSummaryLengthChange={setSummaryLength}
-                />
+                <Tabs activeKey={summarySubTab} onChange={setSummarySubTab} type="card">
+                  <TabPane
+                    tab={
+                      <span>
+                        <FileTextOutlined />
+                        Document
+                      </span>
+                    }
+                    key="document"
+                  >
+                    <DocumentSummarizer
+                      onSummaryGenerated={handleSummaryGenerated}
+                      summaryLength={summaryLength}
+                      onSummaryLengthChange={setSummaryLength}
+                    />
+                  </TabPane>
+
+                  <TabPane
+                    tab={
+                      <span>
+                        <GlobalOutlined />
+                        Webpage
+                      </span>
+                    }
+                    key="webpage"
+                  >
+                    <WebpageSummarizer
+                      onSummaryGenerated={handleSummaryGenerated}
+                      summaryLength={summaryLength}
+                      onSummaryLengthChange={setSummaryLength}
+                    />
+                  </TabPane>
+                </Tabs>
               </TabPane>
 
+              {/* Recognition Tab */}
               <TabPane
                 tab={
                   <span>
-                    <GlobalOutlined />
-                    Webpage URL
+                    <SoundOutlined />
+                    Recognition
                   </span>
                 }
-                key="webpage"
+                key="recognition"
               >
-                <WebpageSummarizer
-                  onSummaryGenerated={handleSummaryGenerated}
-                  summaryLength={summaryLength}
-                  onSummaryLengthChange={setSummaryLength}
-                />
+                <RecognitionTab />
               </TabPane>
             </Tabs>
           </Card>

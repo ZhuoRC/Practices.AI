@@ -18,8 +18,10 @@ import {
   ClockCircleOutlined,
   SoundOutlined,
   CheckCircleOutlined,
+  ThunderboltOutlined,
 } from '@ant-design/icons'
-import type { TaskResult } from '../services/api'
+import type { TaskResult, SummaryResponse } from '../services/api'
+import { summarizeText } from '../services/api'
 
 const { Title, Text } = Typography
 const { TextArea } = Input
@@ -41,9 +43,11 @@ interface TranscriptionResultProps {
   showDownload?: boolean
   onDownload?: (text: string, filename: string) => void
   onClear?: () => void
+  onGenerateSummary?: (summary: SummaryResponse) => void
   extraActions?: React.ReactNode
   variant?: 'document' | 'webpage'
   className?: string
+  showSummarize?: boolean
 }
 
 export function TranscriptionResult({
@@ -53,11 +57,14 @@ export function TranscriptionResult({
   showDownload = true,
   onDownload,
   onClear,
+  onGenerateSummary,
   extraActions,
   variant = 'document',
   className = '',
+  showSummarize = true,
 }: TranscriptionResultProps) {
   const [downloadLoading, setDownloadLoading] = useState(false)
+  const [summarizing, setSummarizing] = useState(false)
 
   // Parse transcription data
   let transcriptionData: TranscriptionData
@@ -101,6 +108,31 @@ export function TranscriptionResult({
     }
   }
 
+  const handleGenerateSummary = async () => {
+    if (!transcriptionData.text) return
+
+    setSummarizing(true)
+    try {
+      const summary = await summarizeText(
+        transcriptionData.text,
+        'transcription',
+        500
+      )
+
+      if (onGenerateSummary) {
+        onGenerateSummary(summary)
+      }
+
+      message.success('Summary generated successfully!')
+    } catch (error: any) {
+      const errorMsg = error.response?.data?.detail || error.message || 'Failed to generate summary'
+      message.error(errorMsg)
+      console.error('Summary generation error:', error)
+    } finally {
+      setSummarizing(false)
+    }
+  }
+
   const getVariantColor = () => {
     return variant === 'webpage' ? '#52c41a' : '#1890ff'
   }
@@ -129,9 +161,20 @@ export function TranscriptionResult({
       }
       extra={
         <Space>
-          {showDownload && transcriptionData.text && (
+          {showSummarize && transcriptionData.text && onGenerateSummary && (
             <Button
               type="primary"
+              icon={<ThunderboltOutlined />}
+              onClick={handleGenerateSummary}
+              loading={summarizing}
+              size="small"
+              style={{ backgroundColor: '#52c41a', borderColor: '#52c41a' }}
+            >
+              Generate Summary
+            </Button>
+          )}
+          {showDownload && transcriptionData.text && (
+            <Button
               icon={<DownloadOutlined />}
               onClick={handleDownload}
               loading={downloadLoading}
