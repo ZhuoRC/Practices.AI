@@ -78,7 +78,7 @@ class AudioVideoLoader:
             file_extension: Original file extension (e.g., '.mp4')
 
         Returns:
-            Audio data as WAV bytes
+            Audio data as MP3 bytes
 
         Raises:
             Exception: If audio extraction fails
@@ -106,13 +106,12 @@ class AudioVideoLoader:
             if video_clip.audio is None:
                 raise Exception("Video file contains no audio track")
 
-            # Create temporary audio file (WAV format)
-            temp_audio_path = temp_video_path.with_suffix('.wav')
+            # Create temporary audio file (MP3 format for better compatibility)
+            temp_audio_path = temp_video_path.with_suffix('.mp3')
             video_clip.audio.write_audiofile(
                 str(temp_audio_path),
-                codec='pcm_s16le',
-                verbose=False,
-                logger=None
+                codec='libmp3lame',
+                bitrate='128k'
             )
 
             # Close video clip to release resources
@@ -122,7 +121,7 @@ class AudioVideoLoader:
             with open(temp_audio_path, 'rb') as audio_file:
                 audio_bytes = audio_file.read()
 
-            logger.info(f"Audio extracted successfully: {len(audio_bytes)} bytes")
+            logger.info(f"Audio extracted successfully: {len(audio_bytes)} bytes (MP3 format)")
 
             return audio_bytes
 
@@ -272,13 +271,14 @@ class AudioVideoLoader:
         # Audio formats natively supported by transcription services
         AUDIO_NATIVE_FORMATS = {'.mp3', '.wav', '.m4a', '.mpeg', '.mpga'}
 
-        # Handle video files - always extract audio to WAV
+        # Handle video files - always extract audio to MP3
         if cls.is_video_file(filename):
-            logger.info(f"Processing video file: {filename} - extracting audio to WAV")
-            # Always extract audio from video files to WAV format
+            logger.info(f"Processing video file: {filename} - extracting audio to MP3")
+            # Always extract audio from video files to MP3 format
             # Video containers (mp4, avi, etc.) cannot be sent to transcription APIs
+            # MP3 format provides better compatibility with cloud ASR services
             audio_bytes = cls.extract_audio_from_video(file_bytes, file_extension)
-            return audio_bytes, '.wav'
+            return audio_bytes, '.mp3'
 
         # Handle audio files
         elif cls.is_audio_file(filename):

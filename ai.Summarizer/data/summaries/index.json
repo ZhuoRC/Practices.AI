@@ -1,5 +1,101 @@
 [
   {
+    "id": "20251102_152212_988386",
+    "timestamp": "2025-11-02T15:22:12.988386",
+    "source_type": "document",
+    "source_name": "document_transcription_20251102T232119.txt",
+    "num_chunks": 2,
+    "processing_time": 17.32,
+    "model": "qwen3-30b-a3b",
+    "provider": "cloud",
+    "token_usage": {
+      "prompt_tokens": 3112,
+      "completion_tokens": 1336,
+      "total_tokens": 4448
+    },
+    "original_length": 3470
+  },
+  {
+    "id": "20251102_150158_311615",
+    "timestamp": "2025-11-02T15:01:58.311615",
+    "source_type": "document",
+    "source_name": "Nuvei_Crypto_White_Paper.pdf",
+    "num_chunks": 32,
+    "processing_time": 83.85,
+    "model": "qwen3-30b-a3b",
+    "provider": "cloud",
+    "token_usage": {
+      "prompt_tokens": 28277,
+      "completion_tokens": 3742,
+      "total_tokens": 32019
+    },
+    "original_length": 82581
+  },
+  {
+    "id": "20251102_143843_491388",
+    "timestamp": "2025-11-02T14:38:43.491388",
+    "source_type": "document",
+    "source_name": "无效的医疗_20251031140509.pdf",
+    "num_chunks": 20,
+    "processing_time": 95.02,
+    "model": "qwen3-30b-a3b",
+    "provider": "cloud",
+    "token_usage": {
+      "prompt_tokens": 45650,
+      "completion_tokens": 7485,
+      "total_tokens": 53135
+    },
+    "original_length": 54513
+  },
+  {
+    "id": "20251102_134102_185053",
+    "timestamp": "2025-11-02T13:41:02.185053",
+    "source_type": "document",
+    "source_name": "尘埃落定（阿来）_20251031002219.pdf",
+    "num_chunks": 94,
+    "processing_time": 166.91,
+    "model": "qwen3-30b-a3b",
+    "provider": "cloud",
+    "token_usage": {
+      "prompt_tokens": 221938,
+      "completion_tokens": 8329,
+      "total_tokens": 230267
+    },
+    "original_length": 264063
+  },
+  {
+    "id": "20251102_133734_455430",
+    "timestamp": "2025-11-02T13:37:34.455430",
+    "source_type": "document",
+    "source_name": "有点甜-汪苏泷&BY2.mp3",
+    "num_chunks": 1,
+    "processing_time": 5.96,
+    "model": "qwen3-30b-a3b",
+    "provider": "cloud",
+    "token_usage": {
+      "prompt_tokens": 873,
+      "completion_tokens": 415,
+      "total_tokens": 1288
+    },
+    "original_length": 543
+  },
+  {
+    "id": "20251102_133655_190898",
+    "timestamp": "2025-11-02T13:36:55.190898",
+    "source_type": "document",
+    "source_name": "起风了.mp3",
+    "num_chunks": 1,
+    "processing_time": 6.16,
+    "model": "qwen3-30b-a3b",
+    "provider": "cloud",
+    "token_usage": {
+      "prompt_tokens": 990,
+      "completion_tokens": 422,
+      "total_tokens": 1412
+    },
+    "original_length": 556
+  },
+  {
     "id": "20251101_231608_789509",
     "timestamp": "2025-11-01T23:16:08.789509",
     "source_type": "document",

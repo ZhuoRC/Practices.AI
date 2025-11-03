@@ -43,7 +43,7 @@ class Settings(BaseSettings):
     whisper_device: str = Field(default="auto", env="WHISPER_DEVICE")  # auto, cpu, cuda
     whisper_precision: str = Field(default="auto", env="WHISPER_PRECISION")  # auto, fp16, fp32
     qwen_asr_model: str = Field(default="qwen3-asr-flash", env="QWEN_ASR_MODEL")
-    max_audio_file_size: int = Field(default=100_000_000, env="MAX_AUDIO_FILE_SIZE")  # 100 MB
+    max_audio_file_size: int = Field(default=500_000_000, env="MAX_AUDIO_FILE_SIZE")  # 500 MB
     max_audio_duration: int = Field(default=3600, env="MAX_AUDIO_DURATION")  # 1 hour in seconds
 
     class Config:

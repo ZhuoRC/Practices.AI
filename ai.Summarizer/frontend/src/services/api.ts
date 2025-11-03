@@ -104,6 +104,25 @@ export const summarizeWebpage = async (url: string, summaryLength: number = 500)
   }
 }
 
+export const summarizeText = async (text: string, filename: string = 'text_input', summaryLength: number = 500): Promise<SummaryResponse> => {
+  const response = await api.post<BackendResponse>('/api/summarize/text', {
+    text,
+    filename,
+    summary_length: summaryLength,
+  })
+
+  // Transform backend response to frontend format
+  return {
+    summary: response.data.data.final_summary,
+    chunk_count: response.data.data.num_chunks,
+    processing_time: response.data.data.processing_time,
+    source_type: 'text',
+    source_name: response.data.data.filename,
+    token_usage: response.data.data.token_usage,
+    summary_id: response.data.data.summary_id,
+  }
+}
+
 interface BackendHealthResponse {
   status: string
   llm_provider: string
@@ -331,10 +350,11 @@ export const submitTranscriptionAsync = async (file: File): Promise<AsyncTaskRes
 // Transcribe audio/video to text (full transcription, no summary)
 export const transcribeAudio = async (
   file: File,
+  language: string | null = null,
   onProgress?: (task: TaskResult) => void
-): Promise<string> => {
-  // Submit for transcription (auto-detect language)
-  const asyncResponse = await submitTranscriptionAsync(file, undefined)
+): Promise<TaskResult> => {
+  // Submit for transcription
+  const asyncResponse = await submitTranscriptionAsync(file)
 
   // Poll until completion with more frequent updates for transcription
   const taskResult = await pollUntilComplete(
@@ -344,8 +364,8 @@ export const transcribeAudio = async (
     1800 // 30 minutes max for long audio files
   )
 
-  // Return full transcription text
-  return taskResult.summary || ''
+  // Return full task result
+  return taskResult
 }
 
 export default api

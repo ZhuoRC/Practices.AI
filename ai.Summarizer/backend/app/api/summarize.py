@@ -18,6 +18,13 @@ class WebpageSummarizeRequest(BaseModel):
     summary_length: Optional[int] = 500  # Target summary length in characters
 
 
+class TextSummarizeRequest(BaseModel):
+    """Request model for plain text summarization"""
+    text: str
+    filename: Optional[str] = "text_input"  # Optional filename for metadata
+    summary_length: Optional[int] = 500  # Target summary length in characters
+
+
 class SummarizeResponse(BaseModel):
     """Response model for summarization"""
     success: bool
@@ -118,6 +125,54 @@ async def summarize_webpage(request: WebpageSummarizeRequest):
         return SummarizeResponse(
             success=True,
             message="Webpage summarized successfully",
+            data=result
+        )
+
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Summarization failed: {str(e)}")
+
+
+@router.post("/text", response_model=SummarizeResponse)
+async def summarize_text(request: TextSummarizeRequest):
+    """
+    Summarize plain text using Map-Reduce approach
+
+    Use this endpoint to summarize raw text (e.g., transcription output).
+
+    - **text**: Plain text to summarize
+    - **filename**: Optional filename for metadata (default: "text_input")
+    - **summary_length**: Target summary length in characters (default: 500)
+
+    Returns the final summary along with chunk summaries and metadata
+    """
+    try:
+        if not request.text or not request.text.strip():
+            raise HTTPException(status_code=400, detail="Text cannot be empty")
+
+        # Get summarizer and process
+        summarizer = get_summarizer()
+        result = await summarizer.summarize_text(
+            text=request.text,
+            filename=request.filename,
+            summary_length=request.summary_length
+        )
+
+        # Save summary to storage
+        storage = get_storage()
+        summary_id = storage.save_summary(
+            summary_data=result,
+            source_type="text",
+            source_name=request.filename
+        )
+
+        # Add summary_id to result
+        result["summary_id"] = summary_id
+
+        return SummarizeResponse(
+            success=True,
+            message="Text summarized successfully",
             data=result
         )
 

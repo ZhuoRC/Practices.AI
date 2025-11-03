@@ -63,3 +63,4 @@ ai.qwen-image-local/qwen_image_edit/output/*
 
 # Claude
 .claude/
+*claude*/
