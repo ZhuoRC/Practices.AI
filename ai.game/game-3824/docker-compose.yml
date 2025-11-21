@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  game-3824:
+    build: .
+    container_name: 24-point-game
+    ports:
+      - "5100:80"
+    restart: unless-stopped
+    environment:
+      - NGINX_HOST=localhost
+      - NGINX_PORT=80
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.game-3824.rule=Host(`localhost`)"
+      - "traefik.http.services.game-3824.loadbalancer.server.port=80"
+    networks:
+      - game-network
+
+networks:
+  game-network:
+    driver: bridge

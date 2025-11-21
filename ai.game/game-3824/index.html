@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>24 Point Math Puzzle Game</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <!-- Top difficulty selector -->
+    <div class="top-difficulty-selector">
+        <label for="difficulty">Difficulty:</label>
+        <select id="difficulty">
+            <option value="easy">Easy</option>
+            <option value="medium" selected>Medium</option>
+            <option value="hard">Hard</option>
+        </select>
+    </div>
+
+    <!-- Top score display -->
+    <div class="top-score-display">
+        <span class="score-label">Score:</span>
+        <span id="top-score">0</span>
+    </div>
+
+    <!-- Top feedback container -->
+    <div class="top-feedback-container" id="top-feedback">
+        <div class="top-feedback-message"></div>
+    </div>
+
+    <div class="game-container">
+        <header class="game-header">
+            <h1>24 Point Game</h1>
+            <p class="subtitle">Use 4 numbers with +, -, ×, ÷ to get 24</p>
+            <div class="score-board">
+                <div class="score-item">
+                    <span class="label">Level:</span>
+                    <span id="level">1</span>
+                </div>
+                <div class="score-item">
+                    <span class="label">Score:</span>
+                    <span id="score">0</span>
+                </div>
+                <div class="score-item">
+                    <span class="label">Streak:</span>
+                    <span id="streak">0</span>
+                </div>
+            </div>
+        </header>
+
+        <main class="game-main">
+            <!-- Top section: Cards and Expression -->
+            <div class="top-section">
+                <!-- Number cards area - horizontal layout -->
+                <div class="cards-container-horizontal">
+                    <div class="card" data-value="0" data-index="0">
+                        <div class="card-content">
+                            <span class="number">3</span>
+                            <span class="suit">♠</span>
+                        </div>
+                    </div>
+                    <div class="card" data-value="0" data-index="1">
+                        <div class="card-content">
+                            <span class="number">8</span>
+                            <span class="suit">♥</span>
+                        </div>
+                    </div>
+                    <div class="card" data-value="0" data-index="2">
+                        <div class="card-content">
+                            <span class="number">1</span>
+                            <span class="suit">♣</span>
+                        </div>
+                    </div>
+                    <div class="card" data-value="0" data-index="3">
+                        <div class="card-content">
+                            <span class="number">1</span>
+                            <span class="suit">♦</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Expression display area - centered and large -->
+                <div class="expression-container-large">
+                    <div class="expression-and-result">
+                        <div class="expression-display-large" id="expression">
+                            <span class="placeholder">Select numbers and operators to build expression</span>
+                        </div>
+                        <div class="result-display-large">
+                            = <span id="result">?</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Middle section: Operators -->
+            <div class="operators-container-horizontal">
+                <button class="operator-btn-large" data-op="+">+</button>
+                <button class="operator-btn-large" data-op="-">−</button>
+                <button class="operator-btn-large" data-op="*">×</button>
+                <button class="operator-btn-large" data-op="/">÷</button>
+                <button class="operator-btn-large" data-op="(">(</button>
+                <button class="operator-btn-large" data-op=")">)</button>
+            </div>
+
+            <!-- Bottom section: Controls -->
+            <div class="controls-container">
+                <div class="left-controls">
+                    <button id="clear-btn" class="action-btn-icon">
+                        <span class="icon">🗑️</span>
+                        <span class="text">Clear</span>
+                    </button>
+                </div>
+                <div class="center-controls">
+                    <button id="undo-btn" class="action-btn-icon">
+                        <span class="icon">↶</span>
+                        <span class="text">Undo</span>
+                    </button>
+                </div>
+                <div class="right-controls">
+                    <button id="hint-btn-icon" class="action-btn-icon hint-btn-simple">
+                        <span class="icon">💡</span>
+                        <span class="text">Hint</span>
+                    </button>
+                    <button id="new-game-btn" class="action-btn-icon">
+                        <span class="icon">🎲</span>
+                        <span class="text">New Game</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Feedback area -->
+            <div class="feedback-container" id="feedback">
+                <div class="feedback-message"></div>
+            </div>
+        </main>
+
+        <footer class="game-footer">
+            <div class="stats">
+                <div class="stat-item">
+                    <span>Best Streak:</span>
+                    <span id="best-streak">0</span>
+                </div>
+                <div class="stat-item">
+                    <span>Total Games:</span>
+                    <span id="total-games">0</span>
+                </div>
+                <div class="stat-item">
+                    <span>Success Rate:</span>
+                    <span id="success-rate">0%</span>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Hint modal -->
+    <div class="modal" id="hint-modal">
+        <div class="modal-content">
+            <h3>Hint</h3>
+            <p id="hint-text"></p>
+            <button class="close-modal" onclick="closeHintModal()">Close</button>
+        </div>
+    </div>
+
+    <script src="js/game.js"></script>
+</body>
+</html>
