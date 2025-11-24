@@ -1,256 +1,263 @@
-简体中文 | [English](README_en.md)
+# Video Subtitle Remover - Web UI
 
-## 项目简介
+这是一个为视频字幕去除器开发的现代化Web用户界面，基于React + TypeScript + Tailwind CSS构建。
 
-![License](https://img.shields.io/badge/License-Apache%202-red.svg)
-![python version](https://img.shields.io/badge/Python-3.11+-blue.svg)
-![support os](https://img.shields.io/badge/OS-Windows/macOS/Linux-green.svg)  
+## 功能特性
 
-Video-subtitle-remover (VSR) 是一款基于AI技术，将视频中的硬字幕去除的软件。
-主要实现了以下功能：
-- **无损分辨率**将视频中的硬字幕去除，生成去除字幕后的文件
-- 通过超强AI算法模型，对去除字幕文本的区域进行填充（非相邻像素填充与马赛克去除）
-- 支持自定义字幕位置，仅去除定义位置中的字幕（传入位置）
-- 支持全视频自动去除所有文本（不传入位置）
-- 支持多选图片批量去除水印文本
+### 🎬 视频处理
+- 支持多种视频格式（MP4, AVI, FLV, WMV, MOV, MKV）
+- 实时视频预览
+- 字幕区域手动选择
+- 处理进度实时监控
 
-<p style="text-align:center;"><img src="https://github.com/YaoFANGUK/video-subtitle-remover/raw/main/design/demo.png" alt="demo.png"/></p>
+### 🛠️ 算法支持
+- **STTN**: 高质量的视频修复算法
+- **LAMA**: 快速的图像修复算法
+- **ProPainter**: 高级视频修复算法
 
-**使用说明：**
+### 🎯 字幕检测
+- 自动字幕检测
+- 手动字幕区域选择
+- 可视化字幕区域预览
+- 拖拽调整字幕区域
 
-- 有使用问题请加群讨论，QQ群：210150985（已满）、806152575（已满）、816881808（已满）、295894827
-- 直接下载压缩包解压运行，如果不能运行再按照下面的教程，尝试源码安装conda环境运行
+### ⚙️ 参数配置
+- 算法参数精细调整
+- 通用参数配置
+- 预设配置支持
+- 实时参数验证
 
-**下载地址：**
+### 🎨 用户体验
+- 深色/浅色主题切换
+- 响应式设计
+- 实时状态反馈
+- 直观的进度显示
 
-Windows GPU版本v1.1.0（GPU）：
+## 快速开始
 
-- 百度网盘:  <a href="https://pan.baidu.com/s/1zR6CjRztmOGBbOkqK8R1Ng?pwd=vsr1">vsr_windows_gpu_v1.1.0.zip</a> 提取码：**vsr1**
+### 环境要求
 
-- Google Drive:  <a href="https://drive.google.com/drive/folders/1NRgLNoHHOmdO4GxLhkPbHsYfMOB_3Elr?usp=sharing">vsr_windows_gpu_v1.1.0.zip</a>
+- Node.js 16+
+- Python 3.8+
+- 现代浏览器（Chrome 90+, Firefox 88+, Safari 14+）
 
-**预构建包对比说明**：
-|       预构建包名          | Python  | Paddle | Torch | 环境                          | 支持的计算能力范围|
-|---------------|------------|--------------|--------------|-----------------------------|----------|
-| `vsr-windows-directml.7z`  | 3.12       | 3.0.0       | 2.4.1       | Windows 非Nvidia显卡             | 通用 |
-| `vsr-windows-nvidia-cuda-11.8.7z` | 3.12       | 3.0.0        | 2.7.0       | CUDA 11.8   | 3.5 – 8.9 |
-| `vsr-windows-nvidia-cuda-12.6.7z` | 3.12       | 3.0.0       | 2.7.0       | CUDA 12.6   | 5.0 – 8.9 |
-| `vsr-windows-nvidia-cuda-12.8.7z` | 3.12       | 3.0.0       | 2.7.0       | CUDA 12.8   | 5.0 – 9.0+ |
+### 安装和运行
 
-> NVIDIA官方提供了各GPU型号的计算能力列表，您可以参考链接: [CUDA GPUs](https://developer.nvidia.com/cuda-gpus) 查看你的GPU适合哪个CUDA版本
+#### 1. 创建虚拟环境并安装依赖
 
-**Docker版本：**
-```shell
-  # Nvidia 10 20 30系显卡
-  docker run -it --name vsr --gpus all eritpchy/video-subtitle-remover:1.1.1-cuda11.8
+如果还没有创建虚拟环境，请先创建：
 
-  # Nvidia 40系显卡
-  docker run -it --name vsr --gpus all eritpchy/video-subtitle-remover:1.1.1-cuda12.6
-
-  # Nvidia 50系显卡
-  docker run -it --name vsr --gpus all eritpchy/video-subtitle-remover:1.1.1-cuda12.8
-
-  # AMD / Intel 独显 集显
-  docker run -it --name vsr --gpus all eritpchy/video-subtitle-remover:1.1.1-directml
-
-  # 演示视频, 输入
-  /vsr/test/test.mp4
-  docker cp vsr:/vsr/test/test_no_sub.mp4 ./
-```
-
-## 演示
-
-- GUI版：
-
-<p style="text-align:center;"><img src="https://github.com/YaoFANGUK/video-subtitle-remover/raw/main/design/demo2.gif" alt="demo2.gif"/></p>
-
-- <a href="https://b23.tv/guEbl9C">点击查看演示视频👇</a>
-
-<p style="text-align:center;"><a href="https://b23.tv/guEbl9C"><img src="https://github.com/YaoFANGUK/video-subtitle-remover/raw/main/design/demo.gif" alt="demo.gif"/></a></p>
-
-## 源码使用说明
-
-
-#### 1. 安装 Python
-
-请确保您已经安装了 Python 3.12+。
-
-- Windows 用户可以前往 [Python 官网](https://www.python.org/downloads/windows/) 下载并安装 Python。
-- MacOS 用户可以使用 Homebrew 安装：
-  ```shell
-  brew install python@3.12
-  ```
-- Linux 用户可以使用包管理器安装，例如 Ubuntu/Debian：
-  ```shell
-  sudo apt update && sudo apt install python3.12 python3.12-venv python3.12-dev
-  ```
-
-#### 2. 安装依赖文件
-
-请使用虚拟环境来管理项目依赖，避免与系统环境冲突。
-
-（1）创建虚拟环境并激活
-```shell
+```bash
+# 创建Python虚拟环境
 python -m venv videoEnv
+
+# 激活虚拟环境
+videoEnv\Scripts\activate
+
+# 安装Python依赖
+pip install -r backend/requirements.txt
 ```
 
-- Windows：
-```shell
-videoEnv\\Scripts\\activate
-```
-- MacOS/Linux：
-```shell
-source videoEnv/bin/activate
-```
+#### 2. 启动后端服务
 
-#### 3. 创建并激活项目目录
+```bash
+# 方式1: 使用启动脚本（推荐）
+start-backend.bat
 
-切换到源码所在目录：
-```shell
-cd <源码所在目录>
-```
-> 例如：如果您的源代码放在 D 盘的 tools 文件夹下，并且源代码的文件夹名为 video-subtitle-remover，则输入：
-> ```shell
-> cd D:/tools/video-subtitle-remover-main
-> ```
-
-#### 4. 安装合适的运行环境
-
-本项目支持 CUDA（NVIDIA显卡加速）和 DirectML（AMD、Intel等GPU/APU加速）两种运行模式。
-
-##### (1) CUDA（NVIDIA 显卡用户）
-
-> 请确保您的 NVIDIA 显卡驱动支持所选 CUDA 版本。
-
-- 推荐 CUDA 11.8，对应 cuDNN 8.6.0。
-
-- 安装 CUDA：
-  - Windows：[CUDA 11.8 下载](https://developer.download.nvidia.com/compute/cuda/11.8.0/local_installers/cuda_11.8.0_522.06_windows.exe)
-  - Linux：
-    ```shell
-    wget https://developer.download.nvidia.com/compute/cuda/11.8.0/local_installers/cuda_11.8.0_520.61.05_linux.run
-    sudo sh cuda_11.8.0_520.61.05_linux.run
-    ```
-  - MacOS 不支持 CUDA。
-
-- 安装 cuDNN（CUDA 11.8 对应 cuDNN 8.6.0）：
-  - [Windows cuDNN 8.6.0 下载](https://developer.download.nvidia.cn/compute/redist/cudnn/v8.6.0/local_installers/11.8/cudnn-windows-x86_64-8.6.0.163_cuda11-archive.zip)
-  - [Linux cuDNN 8.6.0 下载](https://developer.download.nvidia.cn/compute/redist/cudnn/v8.6.0/local_installers/11.8/cudnn-linux-x86_64-8.6.0.163_cuda11-archive.tar.xz)
-  - 安装方法请参考 NVIDIA 官方文档。
-
-- 安装 PaddlePaddle GPU 版本（CUDA 11.8）：
-  ```shell
-  pip install paddlepaddle-gpu==3.0.0 -i https://www.paddlepaddle.org.cn/packages/stable/cu118/
-  ```
-- 安装 Torch GPU 版本（CUDA 11.8）：
-  ```shell
-  pip install torch==2.7.0 torchvision==0.22.0 --index-url https://download.pytorch.org/whl/cu118
-  ```
-
-- 安装其他依赖
-  ```shell
-  pip install -r requirements.txt
-  ```
-
-##### (2) DirectML（AMD、Intel等GPU/APU加速卡用户）
-
-- 适用于 Windows 设备的 AMD/NVIDIA/Intel GPU。
-- 安装 ONNX Runtime DirectML 版本：
-  ```shell
-  pip install paddlepaddle==3.0.0 -i https://www.paddlepaddle.org.cn/packages/stable/cpu/
-  pip install -r requirements.txt
-  pip install torch_directml==0.2.5.dev240914
-  ```
-
-
-#### 4. 运行程序
-
-- 运行图形化界面
-
-```shell
-python gui.py
+# 方式2: 手动启动
+# 先激活虚拟环境
+videoEnv\Scripts\activate
+# 切换到backend目录并启动
+cd backend
+python api.py
 ```
 
-- 运行命令行版本(CLI)
+后端服务将在 `http://localhost:8001` 启动
+  +++++++ REPLACE
 
-```shell
-python ./backend/main.py
+#### 2. 启动前端开发服务器
+
+```bash
+# 方式1: 使用启动脚本
+start-dev.bat
+
+# 方式2: 手动启动
+cd frontend
+npm install
+npm run dev
 ```
 
-## 常见问题
-1. 提取速度慢怎么办
+前端服务将在 `http://localhost:3000` 启动
+  +++++++ REPLACE
 
-修改backend/config.py中的参数，可以大幅度提高去除速度
-```python
-MODE = InpaintMode.STTN  # 设置为STTN算法
-STTN_SKIP_DETECTION = True # 跳过字幕检测，跳过后可能会导致要去除的字幕遗漏或者误伤不需要去除字幕的视频帧
+### 访问应用
+
+打开浏览器访问 `http://localhost:3000` 即可使用Web UI。
+  +++++++ REPLACE
+
+## 使用指南
+
+### 1. 上传视频文件
+
+1. 点击"选择文件"按钮或拖拽文件到上传区域
+2. 支持批量上传多个文件
+3. 文件将自动上传到后端进行处理
+
+### 2. 配置处理参数
+
+#### 选择算法
+- **STTN**: 推荐用于高质量视频修复
+- **LAMA**: 适用于快速处理
+- **ProPainter**: 最佳的视频修复效果
+
+#### 字幕检测模式
+- **自动**: 自动检测字幕位置
+- **手动**: 手动指定字幕区域
+
+#### 手动字幕选择
+1. 在视频预览区域拖拽鼠标选择字幕区域
+2. 绿色框显示当前选择的字幕区域
+3. 可以调整框的大小和位置
+
+### 3. 开始处理
+
+1. 选择要处理的视频文件
+2. 配置处理参数
+3. 点击"开始处理"按钮
+4. 在处理队列中监控进度
+
+### 4. 下载结果
+
+处理完成后：
+1. 在结果管理区域查看处理后的视频
+2. 点击下载按钮获取处理结果
+3. 可以预览处理效果
+
+## 技术架构
+
+### 前端技术栈
+- **React 18**: 用户界面框架
+- **TypeScript**: 类型安全的JavaScript
+- **Tailwind CSS**: 实用优先的CSS框架
+- **Vite**: 快速的构建工具
+- **React Router**: 单页应用路由
+
+### 后端技术栈
+- **FastAPI**: 现代的Python Web框架
+- **Python**: 主要编程语言
+- **OpenCV**: 计算机视觉库
+- **PyTorch**: 深度学习框架
+
+### 通信协议
+- **RESTful API**: 文件上传和处理请求
+- **HTTP轮询**: 任务状态更新
+- **CORS**: 跨域资源共享
+
+## 项目结构
+
+```
+ai.video/video-subtitle-remover/
+├── frontend/                 # 前端应用
+│   ├── src/
+│   │   ├── components/     # React组件
+│   │   ├── services/      # API服务
+│   │   ├── types/         # TypeScript类型定义
+│   │   └── utils/         # 工具函数
+│   ├── package.json
+│   └── vite.config.ts
+├── backend/                 # 后端API
+│   ├── api.py             # FastAPI应用
+│   ├── main.py            # 字幕去除核心逻辑
+│   └── requirements.txt    # Python依赖
+├── start-dev.bat          # 前端启动脚本
+├── start-backend.bat       # 后端启动脚本
+└── README.md             # 项目说明
 ```
 
-2. 视频去除效果不好怎么办
+## API文档
 
-修改backend/config.py中的参数，尝试不同的去除算法，算法介绍
+### 主要端点
 
-> - InpaintMode.STTN 算法：对于真人视频效果较好，速度快，可以跳过字幕检测
-> - InpaintMode.LAMA 算法：对于图片效果最好，对动画类视频效果好，速度一般，不可以跳过字幕检测
-> - InpaintMode.PROPAINTER 算法： 需要消耗大量显存，速度较慢，对运动非常剧烈的视频效果较好
+- `POST /upload` - 上传视频文件
+- `POST /process` - 开始处理视频
+- `GET /tasks/{task_id}` - 获取任务状态
+- `GET /tasks` - 获取所有任务
+- `GET /download/{task_id}` - 下载处理结果
+- `DELETE /tasks/{task_id}` - 删除任务
 
-- 使用STTN算法
+详细API文档可访问 `http://localhost:8001/docs`
+  +++++++ REPLACE
 
-```python
-MODE = InpaintMode.STTN  # 设置为STTN算法
-# 相邻帧数, 调大会增加显存占用，效果变好
-STTN_NEIGHBOR_STRIDE = 10
-# 参考帧长度, 调大会增加显存占用，效果变好
-STTN_REFERENCE_LENGTH = 10
-# 设置STTN算法最大同时处理的帧数量，设置越大速度越慢，但效果越好
-# 要保证STTN_MAX_LOAD_NUM大于STTN_NEIGHBOR_STRIDE和STTN_REFERENCE_LENGTH
-STTN_MAX_LOAD_NUM = 30
+## 开发指南
+
+### 添加新算法
+
+1. 在后端实现新的算法逻辑
+2. 更新API接口支持新算法
+3. 在前端添加对应的参数配置组件
+4. 更新类型定义
+
+### 自定义主题
+
+修改 `tailwind.config.js` 中的主题配置：
+
+```javascript
+theme: {
+  extend: {
+    colors: {
+      'primary': '#your-color',
+      // 其他颜色定义
+    }
+  }
+}
 ```
-- 使用LAMA算法
-```python
-MODE = InpaintMode.LAMA  # 设置为STTN算法
-LAMA_SUPER_FAST = False  # 保证效果
-```
 
-> 如果对模型去字幕的效果不满意，可以查看design文件夹里面的训练方法，利用backend/tools/train里面的代码进行训练，然后将训练的模型替换旧模型即可
+## 故障排除
 
-3. CondaHTTPError
+### 常见问题
 
-将项目中的.condarc放在用户目录下(C:/Users/<你的用户名>)，如果用户目录已经存在该文件则覆盖
+1. **后端启动失败**
+   - 检查Python版本是否满足要求
+   - 确保所有依赖已正确安装
+   - 检查端口8000是否被占用
 
-解决方案：https://zhuanlan.zhihu.com/p/260034241
+2. **前端连接失败**
+   - 确保后端服务正在运行
+   - 检查CORS配置
+   - 验证API地址设置
 
-4. 7z文件解压错误
+3. **文件上传失败**
+   - 检查文件格式是否支持
+   - 确保文件大小不超过限制
+   - 检查网络连接
 
-解决方案：升级7-zip解压程序到最新版本
+4. **处理任务失败**
+   - 检查视频文件是否损坏
+   - 确保算法参数配置正确
+   - 查看后端日志获取详细错误信息
 
+### 日志查看
 
-## 赞助
+- **后端日志**: 控制台输出
+- **前端日志**: 浏览器开发者工具控制台
+- **网络请求**: 浏览器网络面板
 
-<img src="https://github.com/YaoFANGUK/video-subtitle-extractor/raw/main/design/sponsor.png" width="600">
+## 贡献指南
 
-| 捐赠者                       | 累计捐赠金额     | 赞助席位 |
-|---------------------------|------------| --- |
-| 坤V                        | 400.00 RMB | 金牌赞助席位 |
-| Jenkit                        | 200.00 RMB | 金牌赞助席位 |
-| 子车松兰                        | 188.00 RMB | 金牌赞助席位 |
-| 落花未逝                        | 100.00 RMB | 金牌赞助席位 |
-| 张音乐                        | 100.00 RMB | 金牌赞助席位 |
-| 麦格                        | 100.00 RMB | 金牌赞助席位 |
-| 无痕                        | 100.00 RMB | 金牌赞助席位 |
-| wr                        | 100.00 RMB | 金牌赞助席位 |
-| 陈                        | 100.00 RMB | 金牌赞助席位 |
-| lyons                        | 100.00 RMB | 金牌赞助席位 |
-| TalkLuv                   | 50.00 RMB  | 银牌赞助席位 |
-| 陈凯                        | 50.00 RMB  | 银牌赞助席位 |
-| Tshuang                   | 20.00 RMB  | 银牌赞助席位 |
-| 很奇异                       | 15.00 RMB  | 银牌赞助席位 |
-| 郭鑫                       | 12.00 RMB  | 银牌赞助席位 |
-| 生活不止眼前的苟且                        | 10.00 RMB  | 铜牌赞助席位 |
-| 何斐                        | 10.00 RMB  | 铜牌赞助席位 |
-| 老猫                        | 8.80 RMB   | 铜牌赞助席位 |
-| 伍六七                      | 7.77 RMB   | 铜牌赞助席位 |
-| 长缨在手                      | 6.00 RMB   | 铜牌赞助席位 |
-| 无忌                      | 6.00 RMB   | 铜牌赞助席位 |
-| Stephen                   | 2.00 RMB   | 铜牌赞助席位 |
-| Leo                       | 1.00 RMB   | 铜牌赞助席位 |
+1. Fork项目
+2. 创建功能分支
+3. 提交更改
+4. 发起Pull Request
+
+## 许可证
+
+本项目基于MIT许可证开源。
+
+## 更新日志
+
+### v1.0.0
+- 初始版本发布
+- 支持三种算法
+- 完整的Web UI
+- 实时处理进度
+- 主题切换功能
