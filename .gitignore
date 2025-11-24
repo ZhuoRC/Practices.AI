@@ -60,6 +60,7 @@ ai.qwen-image-local/qwen_image/output/*
 ai.qwen-image-local/qwen_image_edit/input/*
 ai.qwen-image-local/qwen_image_edit/output/*
 
+videoEnv/
 
 # Claude
 .claude/

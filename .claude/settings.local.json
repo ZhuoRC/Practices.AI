@@ -27,7 +27,12 @@
       "Bash(python:*)",
       "Bash(curl:*)",
       "Bash(dir:*)",
-      "Bash(claude doctor:*)"
+      "Bash(claude doctor:*)",
+      "Bash(npm start)",
+      "Bash(start.sh:*)",
+      "Bash(piper --help:*)",
+      "Bash(pip install:*)",
+      "Bash(powershell -Command \"Add-Type -AssemblyName System.Speech; (New-Object System.Speech.Synthesis.SpeechSynthesizer).GetInstalledVoices().Count\")"
     ],
     "deny": [],
     "ask": []
