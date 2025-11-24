@@ -1,0 +1,194 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 自定义滚动条 */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-gray-100 dark:bg-gray-800;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-gray-300 dark:bg-gray-600 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-gray-400 dark:bg-gray-500;
+}
+
+/* 文件拖拽区域样式 */
+.dropzone {
+  @apply border-2 border-dashed rounded-lg transition-all duration-200;
+}
+
+.dropzone.active {
+  @apply border-primary-500 bg-primary-50 dark:bg-primary-900/20;
+}
+
+.dropzone.reject {
+  @apply border-red-500 bg-red-50 dark:bg-red-900/20;
+}
+
+/* 视频预览区域 */
+.video-preview {
+  @apply relative bg-black rounded-lg overflow-hidden;
+}
+
+.video-preview video {
+  @apply w-full h-full object-contain;
+}
+
+/* 字幕区域选择框 */
+.subtitle-selection {
+  @apply absolute border-2 border-green-500 bg-green-500/20 cursor-move;
+}
+
+.subtitle-selection .resize-handle {
+  @apply absolute w-3 h-3 bg-green-500 rounded-full;
+}
+
+.subtitle-selection .resize-handle.nw { @apply top-0 left-0 -translate-x-1/2 -translate-y-1/2 cursor-nw-resize; }
+.subtitle-selection .resize-handle.ne { @apply top-0 right-0 translate-x-1/2 -translate-y-1/2 cursor-ne-resize; }
+.subtitle-selection .resize-handle.sw { @apply bottom-0 left-0 -translate-x-1/2 translate-y-1/2 cursor-sw-resize; }
+.subtitle-selection .resize-handle.se { @apply bottom-0 right-0 translate-x-1/2 translate-y-1/2 cursor-se-resize; }
+
+/* 进度条样式 */
+.progress-bar {
+  @apply relative bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden;
+}
+
+.progress-bar .progress-fill {
+  @apply absolute left-0 top-0 h-full bg-gradient-to-r from-primary-500 to-primary-600 transition-all duration-300 ease-out;
+}
+
+.progress-bar .progress-text {
+  @apply absolute inset-0 flex items-center justify-center text-xs font-medium text-white mix-blend-difference;
+}
+
+/* 按钮样式 */
+.btn {
+  @apply px-4 py-2 rounded-lg font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2;
+}
+
+.btn-primary {
+  @apply bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500;
+}
+
+.btn-secondary {
+  @apply bg-gray-200 text-gray-900 hover:bg-gray-300 focus:ring-gray-500 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600;
+}
+
+.btn-danger {
+  @apply bg-red-600 text-white hover:bg-red-700 focus:ring-red-500;
+}
+
+.btn-success {
+  @apply bg-green-600 text-white hover:bg-green-700 focus:ring-green-500;
+}
+
+.btn:disabled {
+  @apply opacity-50 cursor-not-allowed;
+}
+
+/* 输入框样式 */
+.input {
+  @apply w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white;
+}
+
+/* 选择框样式 */
+.select {
+  @apply w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white;
+}
+
+/* 滑块样式 */
+.slider {
+  @apply w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700;
+}
+
+.slider::-webkit-slider-thumb {
+  @apply appearance-none w-4 h-4 bg-primary-600 rounded-full cursor-pointer hover:bg-primary-700;
+}
+
+.slider::-moz-range-thumb {
+  @apply w-4 h-4 bg-primary-600 rounded-full cursor-pointer hover:bg-primary-700 border-0;
+}
+
+/* 卡片样式 */
+.card {
+  @apply bg-white rounded-lg shadow-sm border border-gray-200 dark:bg-gray-800 dark:border-gray-700;
+}
+
+.card-header {
+  @apply px-6 py-4 border-b border-gray-200 dark:border-gray-700;
+}
+
+.card-body {
+  @apply px-6 py-4;
+}
+
+.card-footer {
+  @apply px-6 py-4 border-t border-gray-200 dark:border-gray-700;
+}
+
+/* 标签样式 */
+.badge {
+  @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+}
+
+.badge-primary {
+  @apply bg-primary-100 text-primary-800 dark:bg-primary-900 dark:text-primary-200;
+}
+
+.badge-success {
+  @apply bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200;
+}
+
+.badge-warning {
+  @apply bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200;
+}
+
+.badge-danger {
+  @apply bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200;
+}
+
+/* 加载动画 */
+.loading-spinner {
+  @apply animate-spin rounded-full border-2 border-gray-300 border-t-primary-600;
+}
+
+/* 淡入动画 */
+.fade-in {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* 滑入动画 */
+.slide-in {
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}
+
+/* 响应式隐藏 */
+@media (max-width: 768px) {
+  .hide-mobile {
+    display: none;
+  }
+}
+
+@media (min-width: 769px) {
+  .hide-desktop {
+    display: none;
+  }
+}
