@@ -1,72 +1,28 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Play, Pause, SkipBack, SkipForward, Maximize2 } from 'lucide-react';
-import { FileInfo, ProcessConfig, SubtitleArea } from '../types';
+import { FileInfo } from '../types';
 import { formatDuration } from '../utils';
 import { VideoControls } from './VideoControls';
-import { SubtitleSelector } from './SubtitleSelector';
 
-interface VideoPreviewProps {
+interface ResultVideoPreviewProps {
   file: FileInfo | null;
-  config: ProcessConfig;
-  onConfigChange: (config: ProcessConfig) => void;
-  isModalOpen?: boolean; // 新增：modal状态
+  isModalOpen?: boolean;
 }
 
-export const VideoPreview: React.FC<VideoPreviewProps> = ({
+export const ResultVideoPreview: React.FC<ResultVideoPreviewProps> = ({
   file,
-  config,
-  onConfigChange,
-  isModalOpen = false, // 默认为false
+  isModalOpen = false,
 }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(1);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [subtitleArea, setSubtitleArea] = useState<SubtitleArea | null>(
-    config.subtitleArea || null
-  );
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const onConfigChangeRef = useRef(onConfigChange);
-  
-  // 更新ref以避免useEffect依赖问题
-  useEffect(() => {
-    onConfigChangeRef.current = onConfigChange;
-  }, [onConfigChange]);
 
-  // 当检测模式改变时，初始化字幕区域
-  useEffect(() => {
-    if (config.detectionMode === 'manual' && !subtitleArea) {
-      const defaultArea: SubtitleArea = {
-        x: 100,
-        y: 400,
-        width: 800,
-        height: 200,
-      };
-      setSubtitleArea(defaultArea);
-    } else if (config.detectionMode === 'auto') {
-      setSubtitleArea(null);
-    }
-  }, [config.detectionMode, subtitleArea]);
-
-  // 更新配置中的字幕区域 - 使用useCallback避免无限循环
-  const updateConfigWithSubtitleArea = useCallback(() => {
-    if (subtitleArea && config.detectionMode === 'manual') {
-      onConfigChangeRef.current({
-        ...config,
-        subtitleArea,
-        detectionMode: 'manual',
-      });
-    }
-  }, [subtitleArea, config.detectionMode, config.subtitleArea]);
-
-  useEffect(() => {
-    updateConfigWithSubtitleArea();
-  }, [updateConfigWithSubtitleArea]);
-
-  // 获取完整的视频URL - 修复URL路径问题
+  // 获取完整的视频URL - 与源视图相同的逻辑
   const getVideoUrl = (file: FileInfo) => {
     if (!file.url) return '';
     
@@ -106,16 +62,6 @@ export const VideoPreview: React.FC<VideoPreviewProps> = ({
   const handleLoadedMetadata = () => {
     if (videoRef.current) {
       setDuration(videoRef.current.duration);
-      
-      if (config.detectionMode === 'manual') {
-        const defaultArea: SubtitleArea = {
-          x: Math.round(videoRef.current.videoWidth * 0.05),        // 修复：确保整数
-          y: Math.round(videoRef.current.videoHeight * 0.78),       // 修复：确保整数
-          width: Math.round(videoRef.current.videoWidth * 0.9),      // 修复：确保整数
-          height: Math.round(videoRef.current.videoHeight * 0.21),     // 修复：确保整数
-        };
-        setSubtitleArea(defaultArea);
-      }
     }
   };
 
@@ -167,14 +113,9 @@ export const VideoPreview: React.FC<VideoPreviewProps> = ({
     }
   };
 
-  // 处理字幕区域变化
-  const handleSubtitleAreaChange = (area: SubtitleArea | null) => {
-    setSubtitleArea(area);
-  };
-
   // 处理视频加载错误
   const handleVideoError = (e: React.SyntheticEvent<HTMLVideoElement, Event>) => {
-    console.error('视频加载错误:', e);
+    console.error('结果视频加载错误:', e);
     const video = e.currentTarget;
     console.error('视频元素错误码:', video.error?.code);
     console.error('视频元素错误信息:', video.error?.message);
@@ -194,7 +135,7 @@ export const VideoPreview: React.FC<VideoPreviewProps> = ({
         <div className="card-body">
           <div className="aspect-video bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center">
             <p className="text-gray-500 dark:text-gray-400">
-              请选择要预览的文件
+              请选择要预览的结果文件
             </p>
           </div>
         </div>
@@ -208,23 +149,21 @@ export const VideoPreview: React.FC<VideoPreviewProps> = ({
     <div className="card">
       <div className="card-header">
         <h3 className="font-semibold text-gray-900 dark:text-dark-text">
-          视频预览
+          结果预览
         </h3>
         <div className="flex items-center space-x-2">
-          <span className={`badge ${config.detectionMode === 'auto' ? 'badge-primary' : 'badge-secondary'}`}>
-            {config.detectionMode === 'auto' ? '自动检测' : '手动选择'}
-          </span>
+          <span className="badge badge-success">处理完成</span>
           {file.status === 'processing' && (
-            <span className="badge badge-warning">上传中 {file.progress}%</span>
+            <span className="badge badge-warning">处理中 {file.progress}%</span>
           )}
           {file.status === 'error' && (
-            <span className="badge badge-danger">上传失败</span>
+            <span className="badge badge-danger">处理失败</span>
           )}
         </div>
       </div>
       
       <div className="card-body space-y-4">
-        {/* 视频预览区域 */}
+        {/* 视频预览区域 - 结果视图不需要字幕选择器 */}
         <div
           ref={containerRef}
           className="video-preview aspect-video relative"
@@ -244,16 +183,6 @@ export const VideoPreview: React.FC<VideoPreviewProps> = ({
             controls={false}
             preload="metadata"
           />
-
-          {/* 字幕选择器 - 只有在没有modal打开时才显示 */}
-          {!isModalOpen && (
-            <SubtitleSelector
-              videoRef={videoRef}
-              config={config}
-              subtitleArea={subtitleArea}
-              onSubtitleAreaChange={handleSubtitleAreaChange}
-            />
-          )}
         </div>
 
         {/* 视频控制栏 */}
@@ -273,40 +202,6 @@ export const VideoPreview: React.FC<VideoPreviewProps> = ({
           onVolumeChange={handleVolumeChange}
         />
 
-        {/* 字幕区域控制 */}
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-              字幕检测模式
-            </label>
-            <select
-              value={config.detectionMode}
-              onChange={(e) => onConfigChange({
-                ...config,
-                detectionMode: e.target.value as 'auto' | 'manual',
-              })}
-              className="select w-32"
-            >
-              <option value="auto">自动检测</option>
-              <option value="manual">手动选择</option>
-            </select>
-          </div>
-
-          {config.detectionMode === 'manual' && subtitleArea && (
-            <div className="space-y-2 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-              <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                字幕区域位置
-              </p>
-              <div className="grid grid-cols-2 gap-2 text-xs text-gray-600 dark:text-gray-400">
-                <div>X: {Math.round(subtitleArea.x)}px</div>
-                <div>Y: {Math.round(subtitleArea.y)}px</div>
-                <div>宽度: {Math.round(subtitleArea.width)}px</div>
-                <div>高度: {Math.round(subtitleArea.height)}px</div>
-              </div>
-            </div>
-          )}
-        </div>
-
         {/* 调试信息 */}
         {true && (
           <div className="mt-4 p-3 bg-gray-100 dark:bg-gray-800 rounded-lg text-xs">
@@ -317,7 +212,7 @@ export const VideoPreview: React.FC<VideoPreviewProps> = ({
               <div>文件状态: {file.status}</div>
               {file.progress !== undefined && <div>进度: {file.progress}%</div>}
               <div>Modal状态: {isModalOpen ? '打开' : '关闭'}</div>
-              <div>字幕选择器: {!isModalOpen && config.detectionMode === 'manual' ? '显示' : '隐藏'}</div>
+              <div>视图类型: 结果预览（无字幕选择）</div>
               <div>当前音量: {Math.round(volume * 100)}%</div>
             </div>
           </div>
