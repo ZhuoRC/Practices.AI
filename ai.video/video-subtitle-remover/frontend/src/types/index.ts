@@ -14,6 +14,7 @@ export interface FileInfo {
   progress: number;
   error?: string;
   resultUrl?: string;
+  isOutput?: boolean; // 标记是否为output文件
 }
 
 // 字幕区域配置

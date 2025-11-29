@@ -9,19 +9,19 @@ export interface UploadResponse {
 }
 
 export interface ProcessRequest {
-  file_path: string;
+  filePath: string;
   algorithm: string;
-  detection_mode: string;
-  subtitle_area?: {
+  detectionMode: string;
+  subtitleArea?: {
     x: number;
     y: number;
     width: number;
     height: number;
   };
-  sttn_params?: any;
-  propainter_params?: any;
-  lama_params?: any;
-  common_params?: any;
+  sttnParams?: any;
+  propainterParams?: any;
+  lamaParams?: any;
+  commonParams?: any;
 }
 
 export interface TaskResponse {
@@ -42,6 +42,22 @@ export interface TaskListResponse {
   }>;
 }
 
+export interface UploadedFile {
+  id: string;
+  name: string;
+  url: string;
+  size: number;
+  created_at: string;
+}
+
+export interface OutputFile {
+  id: string;
+  name: string;
+  url: string;
+  size: number;
+  created_at: string;
+}
+
 class ApiService {
   private baseUrl: string;
 
@@ -49,24 +65,58 @@ class ApiService {
     this.baseUrl = baseUrl;
   }
 
-  async uploadFile(file: File): Promise<UploadResponse> {
-    const formData = new FormData();
-    formData.append('file', file);
+  async uploadFile(file: File, onProgress?: (progress: number) => void): Promise<UploadResponse> {
+    return new Promise((resolve, reject) => {
+      const formData = new FormData();
+      formData.append('file', file);
 
-    const response = await fetch(`${this.baseUrl}/upload`, {
-      method: 'POST',
-      body: formData,
+      const xhr = new XMLHttpRequest();
+      
+      // 监听上传进度
+      if (onProgress) {
+        xhr.upload.addEventListener('progress', (event) => {
+          if (event.lengthComputable) {
+            const progress = Math.round((event.loaded / event.total) * 100);
+            onProgress(progress);
+          }
+        });
+      }
+
+      xhr.addEventListener('load', () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          try {
+            const response = JSON.parse(xhr.responseText);
+            resolve(response);
+          } catch (error) {
+            reject(new Error('解析响应失败'));
+          }
+        } else {
+          try {
+            const error = JSON.parse(xhr.responseText);
+            reject(new Error(error.detail || '文件上传失败'));
+          } catch {
+            reject(new Error(`上传失败: ${xhr.statusText}`));
+          }
+        }
+      });
+
+      xhr.addEventListener('error', () => {
+        reject(new Error('网络错误，上传失败'));
+      });
+
+      xhr.addEventListener('timeout', () => {
+        reject(new Error('上传超时'));
+      });
+
+      xhr.open('POST', `${this.baseUrl}/upload`);
+      xhr.timeout = 300000; // 5分钟超时
+      xhr.send(formData);
     });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.detail || '文件上传失败');
-    }
-
-    return response.json();
   }
 
   async startProcessing(request: ProcessRequest): Promise<TaskResponse> {
+    console.log('Sending request:', request);
+    
     const response = await fetch(`${this.baseUrl}/process`, {
       method: 'POST',
       headers: {
@@ -75,9 +125,31 @@ class ApiService {
       body: JSON.stringify(request),
     });
 
+    console.log('Response status:', response.status);
+    console.log('Response ok:', response.ok);
+
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.detail || '处理请求失败');
+      let errorMessage = '处理请求失败';
+      try {
+        const error = await response.json();
+        console.log('Error response:', error);
+        
+        // 处理FastAPI的验证错误
+        if (error.detail && Array.isArray(error.detail)) {
+          errorMessage = error.detail.map((err: any) => {
+            return `${err.loc ? err.loc.join('.') + ': ' : ''}${err.msg}`;
+          }).join('; ');
+        } else if (error.detail) {
+          errorMessage = typeof error.detail === 'string' ? error.detail : JSON.stringify(error.detail);
+        } else {
+          errorMessage = JSON.stringify(error) || '处理请求失败';
+        }
+      } catch (e) {
+        console.log('Failed to parse error:', e);
+        const errorText = await response.text();
+        errorMessage = errorText || '处理请求失败';
+      }
+      throw new Error(errorMessage);
     }
 
     return response.json();
@@ -113,6 +185,41 @@ class ApiService {
     if (!response.ok) {
       const error = await response.json();
       throw new Error(error.detail || '删除任务失败');
+    }
+
+    return response.json();
+  }
+
+  async getUploadedFiles(): Promise<UploadedFile[]> {
+    const response = await fetch(`${this.baseUrl}/files`);
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || '获取文件列表失败');
+    }
+
+    return response.json();
+  }
+
+  async getOutputFiles(): Promise<OutputFile[]> {
+    const response = await fetch(`${this.baseUrl}/outputs`);
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || '获取输出文件列表失败');
+    }
+
+    return response.json();
+  }
+
+  async deleteFile(fileId: string): Promise<{ message: string }> {
+    const response = await fetch(`${this.baseUrl}/files/${fileId}`, {
+      method: 'DELETE',
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || '删除文件失败');
     }
 
     return response.json();

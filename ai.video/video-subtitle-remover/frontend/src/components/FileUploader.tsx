@@ -11,6 +11,7 @@ interface FileUploaderProps {
   selectedFileId?: string;
   onFileSelect: (file: FileInfo) => void;
   onFileRemove: (fileId: string) => void;
+  compactMode?: boolean;
 }
 
 export const FileUploader: React.FC<FileUploaderProps> = ({
@@ -19,6 +20,7 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
   selectedFileId,
   onFileSelect,
   onFileRemove,
+  compactMode = false,
 }) => {
   const [isDragActive, setIsDragActive] = useState(false);
 
@@ -49,6 +51,7 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
         url: URL.createObjectURL(file),
         status: 'pending',
         progress: 0,
+        file: file, // 添加实际的 File 对象，这是修复的关键
       };
 
       // 生成缩略图
@@ -119,6 +122,21 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
     }
   };
 
+  // Compact模式：只显示上传按钮
+  if (compactMode) {
+    return (
+      <div
+        {...getRootProps()}
+        className="flex items-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg cursor-pointer transition-colors text-sm font-medium"
+      >
+        <input {...getInputProps()} />
+        <Upload className="w-4 h-4" />
+        <span>上传文件</span>
+      </div>
+    );
+  }
+
+  // 完整模式：显示拖拽区域和文件列表
   return (
     <div className="space-y-4">
       {/* 拖拽上传区域 */}
