@@ -417,27 +417,30 @@ function App() {
         throw new Error('文件尚未正确上传，请重新上传文件');
       }
       
-      // 修复：如果是相对路径，需要转换为绝对路径供后端处理
-      let absoluteFilePath = filePath;
+      // 修复：使用相对路径，后端会自动拼接完整路径
+      let processFilePath = filePath;
       if (filePath.startsWith('/uploads/')) {
-        // 对于相对路径，后端应该能直接处理
-        absoluteFilePath = filePath;
+        // 对于相对路径，直接使用
+        processFilePath = filePath;
       } else if (filePath.startsWith('http://') || filePath.startsWith('https://')) {
         // 如果是完整URL，提取路径部分
         const url = new URL(filePath);
-        absoluteFilePath = url.pathname;
+        processFilePath = url.pathname;
       }
       
-      // 创建处理请求 - 使用驼峰命名以匹配后端API
+      console.log('Final process file path:', processFilePath);
+      
+      // 创建处理请求 - 添加多字幕区域支持
       const processRequest = {
-        filePath: absoluteFilePath, // 修复：使用正确的路径格式
+        filePath: processFilePath, // 修复：使用正确的路径格式
         algorithm: config.algorithm,
         detectionMode: config.detectionMode,
-        subtitleArea: config.subtitleArea ? {
-          x: config.subtitleArea.x,
-          y: config.subtitleArea.y,
-          width: config.subtitleArea.width,
-          height: config.subtitleArea.height,
+        subtitleAreas: config.subtitleAreas, // 修复：发送多字幕区域数组
+        subtitleArea: config.subtitleAreas && config.subtitleAreas.length > 0 ? {
+          x: config.subtitleAreas[0].x,
+          y: config.subtitleAreas[0].y,
+          width: config.subtitleAreas[0].width,
+          height: config.subtitleAreas[0].height,
         } : undefined,
         sttnParams: config.sttnParams,
         propainterParams: config.propainterParams,
@@ -829,19 +832,19 @@ function App() {
               </div>
 
               <div className="flex items-center gap-6">
-                {config.subtitleArea && (
+                {config.subtitleAreas && config.subtitleAreas.length > 0 && (
                   <>
                     <div className="flex items-center gap-2">
                       <span className="min-w-[30px] text-gray-700 font-medium">X：</span>
                       <input 
                         type="text" 
-                        value={config.subtitleArea.x}
+                        value={config.subtitleAreas[0].x}
                         onChange={(e) => setConfig(prev => ({
                           ...prev,
-                          subtitleArea: prev.subtitleArea ? {
-                            ...prev.subtitleArea,
-                            x: parseInt(e.target.value) || 0
-                          } : undefined
+                          subtitleAreas: prev.subtitleAreas ? [
+                            { ...prev.subtitleAreas[0], x: parseInt(e.target.value) || 0 },
+                            ...prev.subtitleAreas.slice(1)
+                          ] : undefined
                         }))}
                         className="w-24 px-3 py-2 text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
@@ -850,13 +853,13 @@ function App() {
                       <span className="min-w-[30px] text-gray-700 font-medium">Y：</span>
                       <input 
                         type="text" 
-                        value={config.subtitleArea.y}
+                        value={config.subtitleAreas[0].y}
                         onChange={(e) => setConfig(prev => ({
                           ...prev,
-                          subtitleArea: prev.subtitleArea ? {
-                            ...prev.subtitleArea,
-                            y: parseInt(e.target.value) || 0
-                          } : undefined
+                          subtitleAreas: prev.subtitleAreas ? [
+                            { ...prev.subtitleAreas[0], y: parseInt(e.target.value) || 0 },
+                            ...prev.subtitleAreas.slice(1)
+                          ] : undefined
                         }))}
                         className="w-24 px-3 py-2 text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />

@@ -19,10 +19,13 @@ export interface FileInfo {
 
 // 字幕区域配置
 export interface SubtitleArea {
+  id: string;  // 新增：唯一标识符
   x: number;
   y: number;
   width: number;
   height: number;
+  name?: string;  // 新增：可选的名称
+  color?: string;  // 新增：可选的颜色
 }
 
 // 处理配置
@@ -33,8 +36,8 @@ export interface ProcessConfig {
   // 字幕检测模式
   detectionMode: 'auto' | 'manual';
   
-  // 手动字幕区域
-  subtitleArea?: SubtitleArea;
+  // 手动字幕区域 - 修改为支持多个区域
+  subtitleAreas?: SubtitleArea[];  // 修改：从单个区域改为区域数组
   
   // STTN 算法参数
   sttnParams?: {

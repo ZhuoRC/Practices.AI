@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Play, Pause, SkipBack, SkipForward, Maximize2 } from 'lucide-react';
+import { Play, Pause, SkipBack, SkipForward, Maximize2, Settings } from 'lucide-react';
 import { FileInfo, ProcessConfig, SubtitleArea } from '../types';
 import { formatDuration } from '../utils';
 import { VideoControls } from './VideoControls';
@@ -9,7 +9,7 @@ interface VideoPreviewProps {
   file: FileInfo | null;
   config: ProcessConfig;
   onConfigChange: (config: ProcessConfig) => void;
-  isModalOpen?: boolean; // 新增：modal状态
+  isModalOpen?: boolean; // modal状态
 }
 
 export const VideoPreview: React.FC<VideoPreviewProps> = ({
@@ -23,9 +23,10 @@ export const VideoPreview: React.FC<VideoPreviewProps> = ({
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(1);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [subtitleArea, setSubtitleArea] = useState<SubtitleArea | null>(
-    config.subtitleArea || null
+  const [subtitleAreas, setSubtitleAreas] = useState<SubtitleArea[]>(
+    config.subtitleAreas || []
   );
+  const [showSubtitlePanel, setShowSubtitlePanel] = useState(false);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -38,37 +39,43 @@ export const VideoPreview: React.FC<VideoPreviewProps> = ({
 
   // 当检测模式改变时，初始化字幕区域
   useEffect(() => {
-    if (config.detectionMode === 'manual' && !subtitleArea) {
-      const defaultArea: SubtitleArea = {
-        x: 100,
-        y: 400,
-        width: 800,
-        height: 200,
-      };
-      setSubtitleArea(defaultArea);
+    if (config.detectionMode === 'manual' && subtitleAreas.length === 0) {
+      if (videoRef.current) {
+        const video = videoRef.current;
+        const defaultArea: SubtitleArea = {
+          id: `area-${Date.now()}`,
+          x: Math.round(video.videoWidth * 0.05),
+          y: Math.round(video.videoHeight * 0.78),
+          width: Math.round(video.videoWidth * 0.9),
+          height: Math.round(video.videoHeight * 0.21),
+          name: '字幕区域 1',
+          color: '#22c55e',
+        };
+        setSubtitleAreas([defaultArea]);
+      }
     } else if (config.detectionMode === 'auto') {
-      setSubtitleArea(null);
+      setSubtitleAreas([]);
     }
-  }, [config.detectionMode, subtitleArea]);
+  }, [config.detectionMode, subtitleAreas.length]);
 
   // 更新配置中的字幕区域 - 使用useCallback避免无限循环
-  const updateConfigWithSubtitleArea = useCallback(() => {
-    if (subtitleArea && config.detectionMode === 'manual') {
+  const updateConfigWithSubtitleAreas = useCallback(() => {
+    if (config.detectionMode === 'manual') {
       onConfigChangeRef.current({
         ...config,
-        subtitleArea,
+        subtitleAreas,
         detectionMode: 'manual',
       });
     }
-  }, [subtitleArea, config.detectionMode, config.subtitleArea]);
+  }, [subtitleAreas, config.detectionMode, config.subtitleAreas]);
 
   useEffect(() => {
-    updateConfigWithSubtitleArea();
-  }, [updateConfigWithSubtitleArea]);
+    updateConfigWithSubtitleAreas();
+  }, [updateConfigWithSubtitleAreas]);
 
   // 获取完整的视频URL - 修复URL路径问题
-  const getVideoUrl = (file: FileInfo) => {
-    if (!file.url) return '';
+  const getVideoUrl = (file: FileInfo | null) => {
+    if (!file?.url) return '';
     
     // 如果是blob URL，直接使用
     if (file.url.startsWith('blob:')) {
@@ -107,14 +114,18 @@ export const VideoPreview: React.FC<VideoPreviewProps> = ({
     if (videoRef.current) {
       setDuration(videoRef.current.duration);
       
-      if (config.detectionMode === 'manual') {
+      if (config.detectionMode === 'manual' && subtitleAreas.length === 0) {
+        const video = videoRef.current;
         const defaultArea: SubtitleArea = {
-          x: Math.round(videoRef.current.videoWidth * 0.05),        // 修复：确保整数
-          y: Math.round(videoRef.current.videoHeight * 0.78),       // 修复：确保整数
-          width: Math.round(videoRef.current.videoWidth * 0.9),      // 修复：确保整数
-          height: Math.round(videoRef.current.videoHeight * 0.21),     // 修复：确保整数
+          id: `area-${Date.now()}`,
+          x: Math.round(video.videoWidth * 0.05),
+          y: Math.round(video.videoHeight * 0.78),
+          width: Math.round(video.videoWidth * 0.9),
+          height: Math.round(video.videoHeight * 0.21),
+          name: '字幕区域 1',
+          color: '#22c55e',
         };
-        setSubtitleArea(defaultArea);
+        setSubtitleAreas([defaultArea]);
       }
     }
   };
@@ -168,8 +179,8 @@ export const VideoPreview: React.FC<VideoPreviewProps> = ({
   };
 
   // 处理字幕区域变化
-  const handleSubtitleAreaChange = (area: SubtitleArea | null) => {
-    setSubtitleArea(area);
+  const handleSubtitleAreasChange = (areas: SubtitleArea[]) => {
+    setSubtitleAreas(areas);
   };
 
   // 处理视频加载错误
@@ -184,7 +195,7 @@ export const VideoPreview: React.FC<VideoPreviewProps> = ({
     if (video.error?.code === 4) {
       console.log('检测到404错误，可能是路径问题');
       console.log('原始file.url:', file?.url);
-      console.log('处理后URL:', getVideoUrl(file!));
+      console.log('处理后URL:', getVideoUrl(file));
     }
   };
 
@@ -223,37 +234,88 @@ export const VideoPreview: React.FC<VideoPreviewProps> = ({
         </div>
       </div>
       
-      <div className="card-body space-y-4">
-        {/* 视频预览区域 */}
-        <div
-          ref={containerRef}
-          className="video-preview aspect-video relative"
-        >
-          <video
-            ref={videoRef}
-            src={videoUrl}
-            className="w-full h-full"
-            onLoadedMetadata={handleLoadedMetadata}
-            onTimeUpdate={handleTimeUpdate}
-            onPlay={() => setIsPlaying(true)}
-            onPause={() => setIsPlaying(false)}
-            onError={handleVideoError}
-            // 添加跨域属性，以防后端需要
-            crossOrigin="anonymous"
-            // 添加一些额外的属性来帮助调试
-            controls={false}
-            preload="metadata"
-          />
+      <div className="card-body">
+        {/* 字幕控制按钮和模式选择 */}
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center space-x-3">
+            {/* 模式选择 */}
+            <div className="flex items-center space-x-2">
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                字幕检测模式
+              </label>
+              <select
+                value={config.detectionMode}
+                onChange={(e) => onConfigChange({
+                  ...config,
+                  detectionMode: e.target.value as 'auto' | 'manual',
+                })}
+                className="select"
+              >
+                <option value="auto">自动检测</option>
+                <option value="manual">手动选择</option>
+              </select>
+            </div>
 
-          {/* 字幕选择器 - 只有在没有modal打开时才显示 */}
-          {!isModalOpen && (
-            <SubtitleSelector
-              videoRef={videoRef}
-              config={config}
-              subtitleArea={subtitleArea}
-              onSubtitleAreaChange={handleSubtitleAreaChange}
+            {/* 字幕控制面板开关 */}
+            {config.detectionMode === 'manual' && (
+              <button
+                onClick={() => setShowSubtitlePanel(!showSubtitlePanel)}
+                className={`flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  showSubtitlePanel
+                    ? 'bg-blue-600 text-white hover:bg-blue-700'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300'
+                }`}
+              >
+                <Settings className="w-4 h-4" />
+                <span>字幕区域管理</span>
+                {subtitleAreas.length > 0 && (
+                  <span className="ml-1 px-2 py-1 bg-blue-500 text-white text-xs rounded-full">
+                    {subtitleAreas.length}
+                  </span>
+                )}
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* 视频预览区域 - 独立容器，不会被字幕控制面板遮挡 */}
+        <div className="relative">
+          <div
+            ref={containerRef}
+            className="video-preview aspect-video relative"
+          >
+            <video
+              ref={videoRef}
+              src={videoUrl}
+              className="w-full h-full"
+              onLoadedMetadata={handleLoadedMetadata}
+              onTimeUpdate={handleTimeUpdate}
+              onPlay={() => setIsPlaying(true)}
+              onPause={() => setIsPlaying(false)}
+              onError={handleVideoError}
+              // 添加跨域属性，以防后端需要
+              crossOrigin="anonymous"
+              // 添加一些额外的属性来帮助调试
+              controls={false}
+              preload="metadata"
             />
-          )}
+
+            {/* 简化的字幕区域显示 - 只在视频内显示边界框 */}
+            {config.detectionMode === 'manual' && !isModalOpen && subtitleAreas.map((area) => (
+              <div
+                key={area.id}
+                className="absolute border-2 border-dashed border-blue-500 bg-blue-100 bg-opacity-20"
+                style={{
+                  left: `${area.x}px`,
+                  top: `${area.y}px`,
+                  width: `${area.width}px`,
+                  height: `${area.height}px`,
+                  backgroundColor: area.color ? `${area.color}20` : undefined,
+                  borderColor: area.color || '#22c55e',
+                }}
+              />
+            ))}
+          </div>
         </div>
 
         {/* 视频控制栏 */}
@@ -273,52 +335,31 @@ export const VideoPreview: React.FC<VideoPreviewProps> = ({
           onVolumeChange={handleVolumeChange}
         />
 
-        {/* 字幕区域控制 */}
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-              字幕检测模式
-            </label>
-            <select
-              value={config.detectionMode}
-              onChange={(e) => onConfigChange({
-                ...config,
-                detectionMode: e.target.value as 'auto' | 'manual',
-              })}
-              className="select w-32"
-            >
-              <option value="auto">自动检测</option>
-              <option value="manual">手动选择</option>
-            </select>
+        {/* 字幕区域控制面板 - 独立区域，不遮挡视频 */}
+        {showSubtitlePanel && config.detectionMode === 'manual' && (
+          <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+            <SubtitleSelector
+              videoRef={videoRef}
+              config={config}
+              subtitleAreas={subtitleAreas}
+              onSubtitleAreasChange={handleSubtitleAreasChange}
+            />
           </div>
-
-          {config.detectionMode === 'manual' && subtitleArea && (
-            <div className="space-y-2 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-              <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                字幕区域位置
-              </p>
-              <div className="grid grid-cols-2 gap-2 text-xs text-gray-600 dark:text-gray-400">
-                <div>X: {Math.round(subtitleArea.x)}px</div>
-                <div>Y: {Math.round(subtitleArea.y)}px</div>
-                <div>宽度: {Math.round(subtitleArea.width)}px</div>
-                <div>高度: {Math.round(subtitleArea.height)}px</div>
-              </div>
-            </div>
-          )}
-        </div>
+        )}
 
         {/* 调试信息 */}
-        {true && (
+        {false && (
           <div className="mt-4 p-3 bg-gray-100 dark:bg-gray-800 rounded-lg text-xs">
             <p className="font-medium text-gray-700 dark:text-gray-300 mb-2">调试信息:</p>
             <div className="space-y-1 text-gray-600 dark:text-gray-400">
-              <div>原始URL: {file.url}</div>
+              <div>原始URL: {file?.url || ''}</div>
               <div>处理后URL: {videoUrl}</div>
-              <div>文件状态: {file.status}</div>
-              {file.progress !== undefined && <div>进度: {file.progress}%</div>}
+              <div>文件状态: {file?.status || 'unknown'}</div>
+              {file?.progress !== undefined && <div>进度: {file.progress}%</div>}
               <div>Modal状态: {isModalOpen ? '打开' : '关闭'}</div>
-              <div>字幕选择器: {!isModalOpen && config.detectionMode === 'manual' ? '显示' : '隐藏'}</div>
+              <div>字幕面板: {showSubtitlePanel ? '显示' : '隐藏'}</div>
               <div>当前音量: {Math.round(volume * 100)}%</div>
+              <div>字幕区域数量: {subtitleAreas.length}</div>
             </div>
           </div>
         )}

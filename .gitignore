@@ -54,6 +54,7 @@ data/chroma_db/*
 # Logs
 logs/
 *.log
+ai.services/claude-relay-service/logs/
 
 .venv/
 ai.qwen-image-local/qwen_image/output/*
