@@ -1,0 +1,20 @@
+{
+    "keep": {
+        "days": false,
+        "amount": 5
+    },
+    "auditLog": "/app/logs/.claude-relay-auth-detail-audit.log.json",
+    "files": [
+        {
+            "date": 1765140307886,
+            "name": "/app/logs/claude-relay-auth-detail-2025-12-07.log",
+            "hash": "d0242a5a0fabe94d7eeae41bc4902323ced9ff2522d8f9d6c0ec9f32e7d1e98d"
+        },
+        {
+            "date": 1765153830589,
+            "name": "/app/logs/claude-relay-auth-detail-2025-12-08.log",
+            "hash": "58eddbf494ad351807fc9697035b3b9290fd18637e21eb88531816c15adec1b8"
+        }
+    ],
+    "hashType": "sha256"
+}

@@ -57,6 +57,18 @@ app.mount("/outputs", StaticFiles(directory=str(OUTPUT_DIR)), name="outputs")
 
 from pydantic import ConfigDict
 
+class SubtitleAreaInfo(BaseModel):
+    """字幕区域信息"""
+    model_config = ConfigDict(populate_by_name=True)
+    
+    id: str
+    name: Optional[str] = None
+    x: int
+    y: int
+    width: int
+    height: int
+    color: Optional[str] = None
+
 class FileInfo(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
     
@@ -72,7 +84,8 @@ class ProcessRequest(BaseModel):
     filePath: str
     algorithm: str = "sttn"
     detectionMode: str = "auto"
-    subtitleArea: Optional[Dict[str, int]] = None  # 修复：坐标应该是整数
+    subtitleAreas: Optional[List[SubtitleAreaInfo]] = None  # 新增：支持多个字幕区域
+    subtitleArea: Optional[Dict[str, int]] = None  # 保留向后兼容性
     sttnParams: Optional[Dict[str, Any]] = None
     propainterParams: Optional[Dict[str, Any]] = None
     lamaParams: Optional[Dict[str, Any]] = None
@@ -150,38 +163,73 @@ async def list_output_files():
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"获取输出文件列表失败: {str(e)}")
 
+def find_file_in_directories(file_id: str) -> tuple[Optional[Path], Optional[str]]:
+    """在uploads和outputs目录中查找文件"""
+    # 首先在uploads目录中查找
+    direct_path = UPLOAD_DIR / file_id
+    if direct_path.exists() and direct_path.is_file():
+        return direct_path, "uploads"
+    
+    # 尝试匹配文件stem（去除扩展名）+ 常见视频扩展名
+    for ext in ['.mp4', '.avi', '.flv', '.wmv', '.mov', '.mkv']:
+        test_path = UPLOAD_DIR / f"{file_id}{ext}"
+        if test_path.exists() and test_path.is_file():
+            return test_path, "uploads"
+    
+    # 如果在uploads中没找到，尝试查找包含file_id的文件（UUID前缀匹配）
+    for path in UPLOAD_DIR.glob("*"):
+        if path.is_file() and (path.stem == file_id or path.name.startswith(file_id)):
+            return path, "uploads"
+    
+    # 如果在uploads中没找到，在outputs目录中查找
+    direct_path = OUTPUT_DIR / file_id
+    if direct_path.exists() and direct_path.is_file():
+        return direct_path, "outputs"
+    
+    # 尝试匹配文件stem（去除扩展名）+ 常见视频扩展名
+    for ext in ['.mp4', '.avi', '.flv', '.wmv', '.mov', '.mkv']:
+        test_path = OUTPUT_DIR / f"{file_id}{ext}"
+        if test_path.exists() and test_path.is_file():
+            return test_path, "outputs"
+    
+    # 如果还没找到，尝试查找包含file_id的文件（UUID前缀匹配）
+    for path in OUTPUT_DIR.glob("*"):
+        if path.is_file() and (path.stem == file_id or path.name.startswith(file_id)):
+            return path, "outputs"
+    
+    # 最后尝试模糊匹配：如果file_id包含下划线或其他分隔符，可能是文件名的一部分
+    for directory, dir_name in [(UPLOAD_DIR, "uploads"), (OUTPUT_DIR, "outputs")]:
+        for path in directory.glob("*"):
+            if path.is_file():
+                # 检查file_id是否是文件名的子串
+                if file_id in path.name:
+                    print(f"Found file by fuzzy match in {dir_name}: {path.name} contains {file_id}")
+                    return path, dir_name
+                
+                # 如果file_id包含UUID，尝试匹配UUID的一部分
+                if '_' in file_id:
+                    parts = file_id.split('_')
+                    for part in parts:
+                        if len(part) > 8 and part in path.name:  # UUID部分通常较长
+                            print(f"Found file by UUID part match in {dir_name}: {path.name} contains {part}")
+                            return path, dir_name
+    
+    return None, None
+
 @app.delete("/files/{file_id}")
 async def delete_file(file_id: str):
-    """删除上传的文件"""
+    """删除上传的文件 - 支持uploads和outputs目录，增强匹配逻辑"""
     try:
-        # 查找文件 - 支持多种格式
-        file_path = None
-        
-        # 首先尝试直接匹配完整文件名（包含扩展名）
-        direct_path = UPLOAD_DIR / file_id
-        if direct_path.exists() and direct_path.is_file():
-            file_path = direct_path
-        else:
-            # 尝试匹配文件stem（去除扩展名）+ 常见视频扩展名
-            for ext in ['.mp4', '.avi', '.flv', '.wmv', '.mov', '.mkv']:
-                test_path = UPLOAD_DIR / f"{file_id}{ext}"
-                if test_path.exists() and test_path.is_file():
-                    file_path = test_path
-                    break
-            
-            # 如果还没找到，尝试查找包含file_id的文件（UUID前缀匹配）
-            if not file_path:
-                for path in UPLOAD_DIR.glob("*"):
-                    if path.is_file() and (path.stem == file_id or path.name.startswith(file_id)):
-                        file_path = path
-                        break
+        # 使用增强的文件查找函数
+        file_path, file_dir = find_file_in_directories(file_id)
         
         if not file_path:
             print(f"File not found for deletion: {file_id}")
-            print(f"Available files: {[f.name for f in UPLOAD_DIR.glob('*') if f.is_file()]}")
+            print(f"Available files in uploads: {[f.name for f in UPLOAD_DIR.glob('*') if f.is_file()]}")
+            print(f"Available files in outputs: {[f.name for f in OUTPUT_DIR.glob('*') if f.is_file()]}")
             raise HTTPException(status_code=404, detail="文件不存在")
         
-        print(f"Deleting file: {file_path}")
+        print(f"Deleting file from {file_dir}: {file_path}")
         
         # 尝试删除文件，如果被占用则等待重试
         max_retries = 3
@@ -207,7 +255,7 @@ async def delete_file(file_id: str):
                 else:
                     raise
         
-        return {"message": "文件已删除"}
+        return {"message": f"文件已从{file_dir}目录删除"}
         
     except HTTPException:
         raise
@@ -263,8 +311,25 @@ async def start_processing(request: ProcessRequest, background_tasks: Background
     """开始处理视频"""
     task_id = str(uuid.uuid4())
     
-    # 检查文件是否存在
-    if not os.path.exists(request.filePath):
+    # 修复：检查文件是否存在 - 处理相对路径
+    file_path = request.filePath
+    if not os.path.isabs(file_path):
+        # 如果是相对路径，构建完整的文件系统路径
+        if file_path.startswith('/uploads/'):
+            file_path = UPLOAD_DIR / file_path[9:]  # 去掉 '/uploads/' 前缀
+        elif file_path.startswith('/outputs/'):
+            file_path = OUTPUT_DIR / file_path[10:]  # 去掉 '/outputs/' 前缀
+        else:
+            # 其他情况，尝试在uploads目录中查找
+            file_path = UPLOAD_DIR / Path(file_path).name
+    
+    file_path = Path(file_path)
+    
+    if not file_path.exists():
+        print(f"File not found: {file_path}")
+        print(f"Requested path: {request.filePath}")
+        print(f"UPLOAD_DIR: {UPLOAD_DIR}")
+        print(f"Available files in uploads: {[f.name for f in UPLOAD_DIR.glob('*') if f.is_file()]}")
         raise HTTPException(status_code=404, detail="文件不存在")
     
     # 创建任务记录
@@ -276,7 +341,7 @@ async def start_processing(request: ProcessRequest, background_tasks: Background
             "result_url": None,
             "error": None,
             "created_at": datetime.now(),
-            "file_path": request.filePath,
+            "file_path": str(file_path),
             "config": request.model_dump()  # 修复：使用model_dump替代dict
         }
     
@@ -284,7 +349,7 @@ async def start_processing(request: ProcessRequest, background_tasks: Background
     background_tasks.add_task(
         process_video_task,
         task_id,
-        request.filePath,
+        str(file_path),
         request.model_dump()  # 修复：使用model_dump替代dict
     )
     
@@ -385,29 +450,44 @@ def process_video_task(task_id: str, file_path: str, config: Dict[str, Any]):
             tasks[task_id]["status"] = "processing"
             tasks[task_id]["message"] = "开始处理视频"
         
-        # 构建字幕区域参数 - 修复数据格式匹配问题
-        subtitle_area = None
-        if config.get("detectionMode") == "manual" and config.get("subtitleArea"):
-            area = config["subtitleArea"]
-            # 转换为后端期望的格式 (ymin, ymax, xmin, xmax)
-            # 坐标已经是整数类型，无需转换
-            subtitle_area = (
-                int(area["y"]),  # ymin
-                int(area["y"] + area["height"]),  # ymax
-                int(area["x"]),  # xmin  
-                int(area["x"] + area["width"])   # xmax
-            )
+        # 构建字幕区域参数 - 支持多个字幕区域
+        subtitle_areas = []
+        
+        if config.get("detectionMode") == "manual":
+            # 优先使用新的subtitleAreas字段
+            if config.get("subtitleAreas"):
+                for area in config["subtitleAreas"]:
+                    # 转换为后端期望的格式 (ymin, ymax, xmin, xmax)
+                    subtitle_areas.append((
+                        int(area["y"]),  # ymin
+                        int(area["y"] + area["height"]),  # ymax
+                        int(area["x"]),  # xmin  
+                        int(area["x"] + area["width"])   # xmax
+                    ))
+                    print(f"Added subtitle area {area.get('name', area['id'])}: {subtitle_areas[-1]}")
+            # 向后兼容：如果只有一个subtitleArea
+            elif config.get("subtitleArea"):
+                area = config["subtitleArea"]
+                subtitle_areas.append((
+                    int(area["y"]),  # ymin
+                    int(area["y"] + area["height"]),  # ymax
+                    int(area["x"]),  # xmin  
+                    int(area["x"] + area["width"])   # xmax
+                ))
+                print(f"Added legacy subtitle area: {subtitle_areas[-1]}")
+        
+        print(f"Processing with {len(subtitle_areas)} subtitle area(s)")
         
         # 创建字幕去除器实例
         remover = subtitle_remover.SubtitleRemover(
             vd_path=file_path,
-            sub_area=subtitle_area,
+            sub_areas=subtitle_areas,  # 传递多个字幕区域
             gui_mode=False
         )
         
         # 开始处理
         with lock:
-            tasks[task_id]["message"] = "正在处理视频..."
+            tasks[task_id]["message"] = f"正在处理视频... ({len(subtitle_areas)}个字幕区域)"
         
         # 运行字幕去除
         remover.run()

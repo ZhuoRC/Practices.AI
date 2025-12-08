@@ -130,7 +130,7 @@ class SubtitleDetect:
         return new_subtitle_frame_no_box_dict
 
     def convertToOnnxModelIfNeeded(self, model_dir, model_filename="inference.pdmodel", params_filename="inference.pdiparams", opset_version=14):
-        """Converts a Paddle model to ONNX if ONNX providers are available and the model does not already exist."""
+        """Converts a Paddle model to ONNX if ONNX providers are available and model does not already exist."""
         
         if not config.ONNX_PROVIDERS:
             return model_dir
@@ -563,18 +563,20 @@ class SubtitleDetect:
 
 
 class SubtitleRemover:
-    def __init__(self, vd_path, sub_area=None, gui_mode=False):
+    def __init__(self, vd_path, sub_area=None, sub_areas=None, gui_mode=False):
         importlib.reload(config)
         # 线程锁
         self.lock = threading.RLock()
         # 用户指定的字幕区域位置
         self.sub_area = sub_area
+        self.sub_areas = sub_areas or ([sub_area] if sub_area else [])  # 支持多个字幕区域
         # 是否为gui运行，gui运行需要显示预览
         self.gui_mode = gui_mode
         # 判断是否为图片
         self.is_picture = False
         if is_image_file(str(vd_path)):
             self.sub_area = None
+            self.sub_areas = []
             self.is_picture = True
         # 视频路径
         self.video_path = vd_path
@@ -744,7 +746,7 @@ class SubtitleRemover:
                                         self.lama_inpaint = LamaInpaint()
                                     inpainted_frame = self.lama_inpaint(frame, single_mask)
                                     self.video_writer.write(inpainted_frame)
-                                    print(f'write frame: {start_frame_no + inner_index} with mask {sub_list[start_frame_no]}')
+                                    print(f'write frame: {start_frame_no + inner_index} with mask {sub_list[index]}')
                                     inner_index += 1
                                     self.update_progress(tbar, increment=1)
                                 elif len(batch) > 1:
@@ -763,12 +765,18 @@ class SubtitleRemover:
         """
         print('use sttn mode with no detection')
         print('[Processing] start removing subtitles...')
-        if self.sub_area is not None:
+        if self.sub_areas and len(self.sub_areas) > 0:
+            # 使用多个字幕区域
+            mask_area_coordinates = []
+            for area in self.sub_areas:
+                mask_area_coordinates.append((area[0], area[1], area[2], area[3]))
+        elif self.sub_area is not None:
             ymin, ymax, xmin, xmax = self.sub_area
+            mask_area_coordinates = [(xmin, xmax, ymin, ymax)]
         else:
             print('[Info] No subtitle area has been set. Video will be processed in full screen. As a result, the final outcome might be suboptimal.')
             ymin, ymax, xmin, xmax = 0, self.frame_height, 0, self.frame_width
-        mask_area_coordinates = [(xmin, xmax, ymin, ymax)]
+            mask_area_coordinates = [(xmin, xmax, ymin, ymax)]
         mask = create_mask(self.mask_size, mask_area_coordinates)
         sttn_video_inpaint = STTNVideoInpaint(self.video_path)
         sttn_video_inpaint(input_mask=mask, input_sub_remover=self, tbar=tbar)

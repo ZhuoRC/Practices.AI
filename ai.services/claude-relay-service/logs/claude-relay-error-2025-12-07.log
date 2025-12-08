@@ -1,0 +1,25 @@
+❌ [2025-12-08 05:33:03] ERROR: ❌ Error cleaning up concurrency counters: Redis client is not connected
+Error: Redis client is not connected
+    at RedisClient.getClientSafe (/app/src/models/redis.js:114:13)
+    at RedisClient.keys (/app/src/models/redis.js:2121:25)
+    at Server.<anonymous> (/app/src/app.js:676:38)
+    at Object.onceWrapper (node:events:631:28)
+    at Server.emit (node:events:517:28)
+    at emitCloseNT (node:net:2221:8)
+    at process.processTicksAndRejections (node:internal/process/task_queues:81:21)
+❌ [2025-12-08 06:37:37] ERROR: Error in standard streamGenerateContent endpoint Request failed with status code 429 | {"status":429,"statusText":"Too Many Requests","responseData":{"error":{"code":429,"message":"You have exhausted your capacity on this model. Your quota will reset after 40s.","status":"RESOURCE_EXHAUSTED","details":["[Max Depth Reached]"]}}}
+AxiosError: Request failed with status code 429
+    at settle (/app/node_modules/axios/dist/node/axios.cjs:2090:12)
+    at RedirectableRequest.handleResponse (/app/node_modules/axios/dist/node/axios.cjs:3155:9)
+    at RedirectableRequest.emit (node:events:517:28)
+    at RedirectableRequest._processResponse (/app/node_modules/follow-redirects/index.js:409:10)
+    at RedirectableRequest._onNativeResponse (/app/node_modules/follow-redirects/index.js:102:12)
+    at Object.onceWrapper (node:events:632:26)
+    at ClientRequest.emit (node:events:517:28)
+    at HTTPParser.parserOnIncomingClient (node:_http_client:700:27)
+    at HTTPParser.parserOnHeadersComplete (node:_http_common:119:17)
+    at TLSSocket.socketOnData (node:_http_client:541:22)
+    at Axios.request (/app/node_modules/axios/dist/node/axios.cjs:4317:41)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async Object.generateContentStream (/app/src/services/geminiAccountService.js:1590:20)
+    at async handleStandardStreamGenerateContent (/app/src/handlers/geminiHandlers.js:2309:24)
