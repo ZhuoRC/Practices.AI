@@ -442,6 +442,7 @@ function App() {
                       <AudioPlayer
                         audioUrl={ttsApi.getAudioDownloadUrl(result.audio_id)}
                         title="生成的语音"
+                        autoPlay={true}
                       />
 
                       <div style={{ marginTop: '16px' }}>
