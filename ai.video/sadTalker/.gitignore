@@ -1,0 +1,61 @@
+# Virtual environment
+venv/
+.venv/
+env/
+
+# Node.js
+node_modules/
+web/node_modules/
+web/dist/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Upload and result directories
+backend/uploads/
+backend/results/
+
+# SadTalker generated files
+SadTalker/results/
+SadTalker/checkpoints/
+SadTalker/gfpgan/weights/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Model files
+*.pth
+*.pt
+*.onnx
+*.safetensors

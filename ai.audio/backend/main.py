@@ -356,7 +356,7 @@ if __name__ == "__main__":
     import uvicorn
     
     host = os.getenv("HOST", "0.0.0.0")
-    port = int(os.getenv("PORT", "7000"))
+    port = int(os.getenv("PORT", "7005"))
     
     logger.info(f"Starting AI Audio TTS Service on {host}:{port}")
     

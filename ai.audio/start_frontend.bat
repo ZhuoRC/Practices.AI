@@ -64,7 +64,8 @@ if not exist ".env" (
         copy ".envX" ".env" >nul
     ) else (
         echo Creating frontend .env file...
-        echo REACT_APP_API_URL=http://localhost:7000 > .env
+        echo REACT_APP_API_URL=http://localhost:7005 > .env
+        echo PORT=3005 >> .env
         echo Created .env file with default API URL
         echo You can modify this if your backend runs on a different port
     )
@@ -72,7 +73,7 @@ if not exist ".env" (
 
 echo.
 echo Starting React development server...
-echo The server will be available at: http://localhost:3000
+echo The server will be available at: http://localhost:3005
 echo Press Ctrl+C to stop the server
 echo.
 npm start

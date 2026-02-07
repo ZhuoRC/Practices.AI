@@ -23,9 +23,31 @@ REM Create backend directory if it doesn't exist
 if not exist "backend" mkdir backend
 cd backend
 
+REM Check if virtual environment exists, create if not
+if not exist "venv" (
+    echo Creating Python virtual environment...
+    python -m venv venv
+    if %errorlevel% neq 0 (
+        echo Failed to create virtual environment
+        pause
+        exit /b 1
+    )
+    echo Virtual environment created successfully
+)
+
+REM Activate virtual environment
+echo Activating virtual environment...
+call venv\Scripts\activate.bat
+if %errorlevel% neq 0 (
+    echo Failed to activate virtual environment
+    pause
+    exit /b 1
+)
+
 REM Install dependencies if requirements.txt exists
 if exist "requirements.txt" (
-    echo Installing Python dependencies...
+    echo Installing Python dependencies in virtual environment...
+    python -m pip install --upgrade pip
     pip install -r requirements.txt
     if %errorlevel% neq 0 (
         echo Failed to install dependencies
@@ -48,7 +70,7 @@ if not exist ".env" (
 )
 
 REM Start the FastAPI server
-echo Starting FastAPI server on http://localhost:7000
+echo Starting FastAPI server on http://localhost:7005
 echo Press Ctrl+C to stop the server
 echo.
 python main.py

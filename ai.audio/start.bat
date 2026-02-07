@@ -25,8 +25,8 @@ echo Starting frontend server...
 start "Frontend" cmd /c "start_frontend.bat"
 
 echo Both servers should be starting...
-echo Backend: http://localhost:7000
-echo Frontend: http://localhost:3000
+echo Backend: http://localhost:7005
+echo Frontend: http://localhost:3005
 echo.
 echo Press any key to close this window
 pause >nul
