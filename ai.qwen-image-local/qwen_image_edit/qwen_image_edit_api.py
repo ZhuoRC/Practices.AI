@@ -48,21 +48,45 @@ async def lifespan(app: FastAPI):
 
         # Determine device and dtype
         if torch.cuda.is_available():
-            torch_dtype = torch.bfloat16
-            device = "cuda"
+            gpu_memory_gb = torch.cuda.get_device_properties(0).total_memory / 1024**3
             logger.info(f"Using GPU: {torch.cuda.get_device_name(0)}")
-            logger.info(f"GPU Memory: {torch.cuda.get_device_properties(0).total_memory / 1024**3:.1f} GB")
+            logger.info(f"GPU Memory: {gpu_memory_gb:.1f} GB")
+
+            # Use float16 for GPUs with less than 8GB memory to reduce VRAM usage
+            if gpu_memory_gb < 8.0:
+                torch_dtype = torch.float16
+                logger.info("Using float16 to reduce memory usage")
+                # Clear CUDA cache
+                torch.cuda.empty_cache()
+            else:
+                torch_dtype = torch.bfloat16
+                logger.info("Using bfloat16")
+
+            device = "cuda"
         else:
             torch_dtype = torch.float32
             device = "cpu"
             logger.info("GPU not available, using CPU")
 
-        # Load the pipeline
+        # Load the pipeline with optimized settings
         pipe = QwenImageEditPipeline.from_pretrained(
             model_name,
-            torch_dtype=torch_dtype
+            torch_dtype=torch_dtype,
+            variant="fp16" if torch_dtype == torch.float16 else None,
+            use_safetensors=True
         )
+
+        # Enable attention slicing to reduce memory usage
+        pipe.enable_attention_slicing()
+        logger.info("Enabled attention slicing for memory optimization")
+
+        # Move to device
         pipe = pipe.to(device)
+
+        # Additional memory optimization for small GPUs
+        if device == "cuda" and gpu_memory_gb < 8.0:
+            pipe.enable_sequential_cpu_offload()
+            logger.info("Enabled sequential CPU offload for additional memory savings")
 
         logger.info("Model loaded successfully!")
 
@@ -75,6 +99,12 @@ async def lifespan(app: FastAPI):
 
     # Cleanup on shutdown (if needed)
     logger.info("Shutting down...")
+    if pipe is not None:
+        del pipe
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+        logger.info("Model unloaded")
+  +++++++ REPLACE
 
 # Initialize FastAPI app with lifespan
 app = FastAPI(
