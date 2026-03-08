@@ -1,7 +1,7 @@
 # PowerShell startup script for Qwen Image Studio
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 Write-Host "========================================" -ForegroundColor Cyan
-Write-Host "   Qwen Image Studio - Full Startup" -ForegroundColor Cyan
+Write-Host "   Qwen Image Studio - Edit Mode" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 
@@ -17,17 +17,12 @@ if (-not (Test-Path ".venv")) {
     exit 1
 }
 
-Write-Host "[1/3] Starting image editing API service (Port 8500)..." -ForegroundColor Yellow
+Write-Host "[1/2] Starting image editing API service (Port 8500)..." -ForegroundColor Yellow
 Write-Host ""
 $editBackend = Start-Process -FilePath "cmd" -ArgumentList "/k call .venv\Scripts\activate.bat && python qwen_image_edit/qwen_image_edit_api.py" -PassThru -WindowStyle Normal
 Start-Sleep -Seconds 5
 
-Write-Host "[2/3] Starting text-to-image API service (Port 8501)..." -ForegroundColor Yellow
-Write-Host ""
-$genBackend = Start-Process -FilePath "cmd" -ArgumentList "/k call .venv\Scripts\activate.bat && python qwen_image/qwen_image_api.py" -PassThru -WindowStyle Normal
-Start-Sleep -Seconds 5
-
-Write-Host "[3/3] Starting frontend interface (Port 3500)..." -ForegroundColor Yellow
+Write-Host "[2/2] Starting frontend interface (Port 3500)..." -ForegroundColor Yellow
 Write-Host ""
 $frontend = Start-Process -FilePath "cmd" -ArgumentList "/k cd frontend && call start.bat" -PassThru -WindowStyle Normal
 
@@ -37,11 +32,9 @@ Write-Host "Services started successfully!" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "Backend API (Image Edit): http://localhost:8500" -ForegroundColor Green
-Write-Host "Backend API (Image Gen):  http://localhost:8501" -ForegroundColor Green
 Write-Host "Frontend:                 http://localhost:3500" -ForegroundColor Green
 Write-Host ""
 Write-Host "API Docs (Image Edit):    http://localhost:8500/docs" -ForegroundColor Gray
-Write-Host "API Docs (Image Gen):     http://localhost:8501/docs" -ForegroundColor Gray
 Write-Host ""
 Write-Host "Note: Services are running in separate windows" -ForegroundColor Yellow
 Write-Host "Close the windows to stop the services" -ForegroundColor Yellow
