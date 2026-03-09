@@ -52,45 +52,52 @@ async def lifespan(app: FastAPI):
             logger.info(f"Using GPU: {torch.cuda.get_device_name(0)}")
             logger.info(f"GPU Memory: {gpu_memory_gb:.1f} GB")
 
-            # Use float16 for GPUs with less than 8GB memory to reduce VRAM usage
+            # For very small GPUs (<8GB), we'll use CPU with low CPU RAM
+            # because even with optimizations, the model is too large
             if gpu_memory_gb < 8.0:
-                torch_dtype = torch.float16
-                logger.info("Using float16 to reduce memory usage")
-                # Clear CUDA cache
-                torch.cuda.empty_cache()
+                logger.info("GPU has less than 8GB VRAM - using CPU mode")
+                logger.info("This will be slower but will work with limited VRAM")
+                device = "cpu"
+                torch_dtype = torch.float32
             else:
+                device = "cuda"
                 torch_dtype = torch.bfloat16
-                logger.info("Using bfloat16")
-
-            device = "cuda"
+                logger.info("Using bfloat16 precision")
         else:
             torch_dtype = torch.float32
             device = "cpu"
             logger.info("GPU not available, using CPU")
 
-        # Load the pipeline with optimized settings
+        # Clear CUDA cache before loading
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+
+        # Load the pipeline with CPU offload from the start for small GPUs
+        logger.info("Loading model...")
         pipe = QwenImageEditPipeline.from_pretrained(
             model_name,
             torch_dtype=torch_dtype,
-            use_safetensors=True
+            use_safetensors=True,
+            variant=None  # Don't use variant parameter
         )
 
-        # Enable attention slicing to reduce memory usage
-        pipe.enable_attention_slicing()
-        logger.info("Enabled attention slicing for memory optimization")
-
-        # Move to device
-        pipe = pipe.to(device)
-
-        # Additional memory optimization for small GPUs
-        if device == "cuda" and gpu_memory_gb < 8.0:
+        # For CPU mode or small GPUs, enable aggressive optimizations
+        if device == "cpu":
+            logger.info("Enabling CPU optimizations...")
             pipe.enable_sequential_cpu_offload()
-            logger.info("Enabled sequential CPU offload for additional memory savings")
+            pipe.enable_attention_slicing()
+            logger.info("Enabled sequential CPU offload and attention slicing")
+        else:
+            # For larger GPUs with CUDA
+            pipe.enable_attention_slicing()
+            logger.info("Enabled attention slicing for memory optimization")
+            pipe = pipe.to(device)
 
         logger.info("Model loaded successfully!")
 
     except Exception as e:
         logger.error(f"Failed to load model: {e}")
+        logger.error("If this is a memory issue, try closing other applications or using a machine with more VRAM")
         raise
 
     # Yield control back to the application
@@ -157,6 +164,8 @@ async def edit_image(
     Accepts image as multipart file upload OR base64 string
     Returns the edited image as binary data (PNG) by default,
     or as base64 string if return_base64=True
+
+    Note: For systems with limited VRAM, inference may take 3-10 minutes
     """
     if pipe is None:
         raise HTTPException(status_code=503, detail="Model not loaded")
@@ -204,6 +213,7 @@ async def edit_image(
 
         logger.info(f"Editing image with prompt: {prompt}")
         logger.info(f"Input image size: {input_img.size}")
+        logger.info("Note: Inference may take several minutes on systems with limited VRAM")
 
         # Prepare generator for seed
         generator = None
