@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Qwen-Image-Edit RESTful API Server
-Provides image editing capabilities using the Qwen-Image-Edit-2509 model
+Provides image editing capabilities using Qwen-Image-Edit-2509 model
 """
 from fastapi import FastAPI, HTTPException, UploadFile, File, Form
 from fastapi.responses import Response
@@ -104,7 +104,6 @@ async def lifespan(app: FastAPI):
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
         logger.info("Model unloaded")
-  +++++++ REPLACE
 
 # Initialize FastAPI app with lifespan
 app = FastAPI(
