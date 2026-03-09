@@ -72,7 +72,6 @@ async def lifespan(app: FastAPI):
         pipe = QwenImageEditPipeline.from_pretrained(
             model_name,
             torch_dtype=torch_dtype,
-            variant="fp16" if torch_dtype == torch.float16 else None,
             use_safetensors=True
         )
 
